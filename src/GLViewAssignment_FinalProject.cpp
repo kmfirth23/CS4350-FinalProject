@@ -402,8 +402,32 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
         this->player1->setLabel("Player1");
         worldLst->push_back(this->player1);
 
+   }
 
-        this->cam->attachCameraToWO(player1, Vector(10, 0, 0));
+   {
+       this->player2 = WO::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO);
+       this->player2->setPosition(Vector(0, 50, 5));
+
+       this->player2->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
+
+       this->player2->upon_async_model_loaded([this]()
+           {
+               ModelMeshSkin& skin = this->player2->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
+
+               skin.setAmbient(aftrColor4f(0.60f, 0.60f, 0.0f, 1.0f));
+               skin.setDiffuse(aftrColor4f(1.0f, 1.0f, 0.0f, 1.0f));
+               skin.setSpecular(aftrColor4f(0.2f, 0.2f, 0.2f, 1.0f));
+               skin.setSpecularCoefficient(10);
+
+               //skin.setAmbient(aftrColor4f(0.4f, 0.2f, 0.95f, 1.0f)); //Color of object when it is not in any light
+               //skin.setDiffuse(aftrColor4f(.1f, .1f, .5f, 1.0f)); //Diffuse color components (ie, matte shading color of this object) // Make it blue? Why not?
+               //skin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
+               //skin.setSpecularCoefficient(1000); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
+           });
+
+
+       this->player2->setLabel("Player2");
+       worldLst->push_back(this->player2);
    }
 
 
