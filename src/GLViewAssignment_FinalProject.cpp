@@ -82,6 +82,26 @@ void GLViewAssignment_FinalProject::onCreate()
    }
    this->setActorChaseType( STANDARDEZNAV ); //Default is STANDARDEZNAV mode
    //this->setNumPhysicsStepsPerRender( 0 ); //pause physics engine on start up; will remain paused till set to 1
+
+   // check if controller is connected
+   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0) {
+       std::cerr << "SDL could not initialize! SDL Error: " << SDL_GetError() << std::endl;
+   }
+   for (int i = 0; i < SDL_NumJoysticks(); i++)
+   {
+       if (SDL_IsGameController(i))
+       {
+           control = SDL_GameControllerOpen(i);
+           if (control)
+           {
+               std::cout << "Controller connected" << std::endl;
+           }
+           break;
+       }
+   }
+
+
+
 }
 
 
@@ -103,6 +123,11 @@ void GLViewAssignment_FinalProject::updateWorld()
    if( this->gulfstream != nullptr && this->moon != nullptr )
       this->moon->setPose( 
          this->orbit_gui.compute_pose( this->gulfstream->getModel()->getPose() ) );
+
+   controllerMove(); //updates location from controller inputs
+   controllerPerspective(); //updates camera angle from controller inputs
+
+
 }
 
 
@@ -149,6 +174,109 @@ void GLViewAssignment_FinalProject::onKeyUp( const SDL_KeyboardEvent& key )
 }
 
 
+void GLViewAssignment_FinalProject::controllerMove()
+{
+    //ensure there is a controller
+    if (!control)
+    {
+        return;
+    }
+
+    //get values from left joystick
+    int xleft = SDL_GameControllerGetAxis(control, SDL_CONTROLLER_AXIS_LEFTX);
+    int yleft = SDL_GameControllerGetAxis(control, SDL_CONTROLLER_AXIS_LEFTY);
+
+    //floats to hold either positive or negative directions from controller movement
+    float xDir = 0.0f;
+    float yDir = 0.0f;
+
+    //compare to dead zone to ensure enough movement occurred (prevent drifting)
+    //identify the direction it moved in
+    if (xleft < -JOYSTICK_DEAD_ZONE)
+    {
+        xDir = -1.0;
+    }
+    else if (xleft > JOYSTICK_DEAD_ZONE)
+    {
+        xDir = 1.0;
+    }
+
+    if (yleft < -JOYSTICK_DEAD_ZONE)
+    {
+        yDir = -1.0;
+    }
+    else if (yleft > JOYSTICK_DEAD_ZONE)
+    {
+        yDir = 1.0;
+    }
+
+
+    // if value is zero do not move (stop movement if joystick is not actively being touched)
+    if (xDir == 0.0f && yDir == 0.0f)
+        return;
+
+    //move camera position accordingly
+    if (yDir < 0)
+        this->cam->moveInLookDirection();
+    else if (yDir > 0)
+        this->cam->moveOppositeLookDirection();
+
+    if (xDir < 0)
+        this->cam->moveLeft();
+    else if (xDir > 0)
+        this->cam->moveRight();
+
+
+}
+
+void GLViewAssignment_FinalProject::controllerPerspective()
+{
+    //get values from right joystick
+    int xright = SDL_GameControllerGetAxis(control, SDL_CONTROLLER_AXIS_RIGHTX);
+    int yright = SDL_GameControllerGetAxis(control, SDL_CONTROLLER_AXIS_RIGHTY);
+
+    //holds either positive or negative directions from joystick movement
+    int xCam = 0;
+    int yCam = 0;
+
+    //compare to dead zone to ensure enough movement occurred (prevent drifting
+    //dentify the direction joystick moved in)
+    if (xright < -JOYSTICK_DEAD_ZONE)
+    {
+        xCam = -1;
+    }
+    else if (xright > JOYSTICK_DEAD_ZONE)
+    {
+        xCam = 1;
+    }
+
+    if (yright < -JOYSTICK_DEAD_ZONE)
+    {
+        yCam = -1;
+    }
+    else if (yright > JOYSTICK_DEAD_ZONE)
+    {
+        yCam = 1;
+    }
+
+
+    // if value is zero do not move (stops movement if joystick is not actively being touched)
+    if (xCam == 0 && yCam == 0)
+        return;
+
+    //speed up camera angle movement
+    int quicker = 5;
+    xCam = xCam * quicker;
+    yCam = yCam * quicker;
+
+    //move camera angle accordingly
+    this->cam->changeLookAtViaMouse(xCam, yCam);
+}
+
+
+
+
+
 void Aftr::GLViewAssignment_FinalProject::loadMap()
 {
    this->worldLst = new WorldList(); //WorldList is a 'smart' vector that is used to store WO*'s
@@ -173,28 +301,7 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_water+6.jpg" );
    //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_dust+6.jpg" );
    skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_mountains+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_winter+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/early_morning+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_afternoon+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_cloudy+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_cloudy3+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_day+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_day2+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_deepsun+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_evening+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_morning+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_morning2+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_noon+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/sky_warp+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_Hubble_Nebula+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_gray_matter+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_easter+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_hot_nebula+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_ice_field+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_lemon_lime+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_milk_chocolate+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_solar_bloom+6.jpg" );
-   //skyBoxImageNames.push_back( ManagerEnvironmentConfiguration::getSMM() + "/images/skyboxes/space_thick_rb+6.jpg" );
+
 
    {
       //Create a light
@@ -252,6 +359,36 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
       gulfstream->setLabel( "Gulfstream GIII" );
       worldLst->push_back( this->gulfstream );
    }
+
+   {
+        this->player1 = WO::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO);
+        this->player1->setPosition(Vector(0, 40, 5));
+
+        this->player1->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
+
+        this->player1->upon_async_model_loaded([this]()
+            {
+                ModelMeshSkin& skin = this->player1->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
+
+                //skin.setAmbient(aftrColor4f(0.25f, 0.25f, 0.25f, 1.0f));
+                skin.setAmbient(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));
+                //skin.setDiffuse(aftrColor4f(0.85f, 0.85f, 0.85f, 1.0f));
+                skin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));
+                skin.setSpecular(aftrColor4f(0.2f, 0.2f, 0.2f, 1.0f));
+                skin.setSpecularCoefficient(10);
+
+                //skin.setAmbient(aftrColor4f(0.4f, 0.2f, 0.95f, 1.0f)); //Color of object when it is not in any light
+                //skin.setDiffuse(aftrColor4f(.1f, .1f, .5f, 1.0f)); //Diffuse color components (ie, matte shading color of this object) // Make it blue? Why not?
+                //skin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
+                //skin.setSpecularCoefficient(1000); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
+            });
+
+
+        this->player1->setLabel("Player1");
+        worldLst->push_back(this->player1);
+
+   }
+
 
    {
       //Make a sphere

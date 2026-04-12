@@ -37,6 +37,16 @@ public:
    virtual void onKeyDown( const SDL_KeyboardEvent& key ) override;
    virtual void onKeyUp( const SDL_KeyboardEvent& key ) override;
 
+   /// <summary>
+   /// Moves camera based on controller left joystick
+   /// </summary>
+   virtual void controllerMove();
+   /// <summary>
+   /// Moves the camera perspeactive based on controller right joystick
+   /// </summary>
+   virtual void controllerPerspective();
+
+
 protected:
    GLViewAssignment_FinalProject( const std::vector< std::string >& args );
    virtual void onCreate();
@@ -47,6 +57,12 @@ protected:
    AftrImGui_Assignment_FinalProject orbit_gui;
    WO* moon = nullptr;
    WO* gulfstream = nullptr;
+
+   SDL_GameController* control = nullptr; //controller exists value
+   const int JOYSTICK_DEAD_ZONE = 8000; //value that axis movement needs to be larger than
+
+
+   WO* player1 = nullptr;
 };
 
 /** \} */
