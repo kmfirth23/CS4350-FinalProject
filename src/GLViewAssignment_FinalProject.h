@@ -58,11 +58,16 @@ protected:
    WO* moon = nullptr;
    WO* gulfstream = nullptr;
 
-   SDL_GameController* control = nullptr; //controller exists value
+   std::vector<SDL_GameController*> controllerList; //list to store different controllers in
+
+   SDL_GameController* control = nullptr; //this windows controller
    const int JOYSTICK_DEAD_ZONE = 8000; //value that axis movement needs to be larger than
 
 
    WO* player1 = nullptr;
+
+   //int playerNum = 0; 
+   int playerNum = 1;
 };
 
 /** \} */

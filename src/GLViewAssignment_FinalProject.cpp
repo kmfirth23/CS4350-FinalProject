@@ -83,7 +83,7 @@ void GLViewAssignment_FinalProject::onCreate()
    this->setActorChaseType( STANDARDEZNAV ); //Default is STANDARDEZNAV mode
    //this->setNumPhysicsStepsPerRender( 0 ); //pause physics engine on start up; will remain paused till set to 1
 
-   // check if controller is connected
+   // find all available controllers
    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0) {
        std::cerr << "SDL could not initialize! SDL Error: " << SDL_GetError() << std::endl;
    }
@@ -91,15 +91,21 @@ void GLViewAssignment_FinalProject::onCreate()
    {
        if (SDL_IsGameController(i))
        {
-           control = SDL_GameControllerOpen(i);
-           if (control)
+           SDL_GameController* tempControl = SDL_GameControllerOpen(i);
+           if (tempControl)
            {
+               //if a controller is connected push it to the controller list
                std::cout << "Controller connected" << std::endl;
+               controllerList.push_back(tempControl);
            }
-           break;
        }
    }
 
+   //based on which player it is set the controller
+   if (playerNum < controllerList.size())
+   {
+       control = controllerList[playerNum];
+   }
 
 
 }
@@ -226,6 +232,8 @@ void GLViewAssignment_FinalProject::controllerMove()
     else if (xDir > 0)
         this->cam->moveRight();
 
+    Vector newPos = this->cam->getPosition();
+    player1->setPosition(newPos.x+5, newPos.y, newPos.z);
 
 }
 
@@ -271,6 +279,7 @@ void GLViewAssignment_FinalProject::controllerPerspective()
 
     //move camera angle accordingly
     this->cam->changeLookAtViaMouse(xCam, yCam);
+
 }
 
 
