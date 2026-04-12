@@ -221,8 +221,14 @@ void GLViewAssignment_FinalProject::controllerMove()
     if (xDir == 0.0f && yDir == 0.0f)
         return;
 
+    //Vector pos = player1->getPosition();
+    //pos.x += (xDir/3.0);
+    //pos.y += (yDir/3.0); 
+
+    //player1->setPosition(pos);
+
     //move camera position accordingly
-    if (yDir < 0)
+   if (yDir < 0)
         this->cam->moveInLookDirection();
     else if (yDir > 0)
         this->cam->moveOppositeLookDirection();
@@ -396,6 +402,8 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
         this->player1->setLabel("Player1");
         worldLst->push_back(this->player1);
 
+
+        this->cam->attachCameraToWO(player1, Vector(10, 0, 0));
    }
 
 

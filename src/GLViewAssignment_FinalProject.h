@@ -66,8 +66,8 @@ protected:
 
    WO* player1 = nullptr;
 
-   //int playerNum = 0; 
-   int playerNum = 1;
+   int playerNum = 0; 
+   //int playerNum = 1;
 };
 
 /** \} */
