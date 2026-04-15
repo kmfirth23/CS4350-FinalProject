@@ -5,10 +5,53 @@
 #include "AftrImGui_WO_Editor.h"
 #include "AftrImGui_Assignment_FinalProject.h"
 
+#include "NetMsg.h"
+
+#include "NetMessengerClient.h"
+#include "NetMsgCreateWO.h"
+
 namespace Aftr
 {
    class Camera;
    class WOImGui;
+
+
+   class NetMsgControlObjects : public NetMsg
+   {
+   public:
+       NetMsgMacroDeclaration(NetMsgControlObjects);
+
+       NetMsgControlObjects();
+       virtual ~NetMsgControlObjects();
+       /// <summary>
+       /// Send out the message
+       /// </summary>
+       /// <param name="os"></param>
+       /// <returns></returns>
+       virtual bool toStream(NetMessengerStreamBuffer& os) const override;
+       /// <summary>
+       /// Read in the message
+       /// </summary>
+       /// <param name="is"></param>
+       /// <returns></returns>
+       virtual bool fromStream(NetMessengerStreamBuffer& is) override;
+       /// <summary>
+       /// Once the message is recieved react accordingly
+       /// </summary>
+       virtual void onMessageArrived() override;
+       /// <summary>
+       /// Payload size
+       /// </summary>
+       /// <returns></returns>
+       virtual std::string toString();
+
+       unsigned int size;
+       //std::string objectName;
+       unsigned int ID;
+       float m[16];
+
+   protected:
+   };
 
 /**
    \class GLViewAssignment_FinalProject
@@ -47,6 +90,16 @@ public:
    virtual void controllerPerspective();
 
 
+   /// <summary>
+   /// takes the position and rotations of the cube and updates them accordingly
+   /// takes the values recieved from the other instance and updates the cubes position
+   /// </summary>
+   /// <param name="id"></param> object id
+   /// <param name="m"></param> pose 
+   virtual void updateObj(int id, float m[16]);
+
+   std::shared_ptr<NetMessengerClient> client = nullptr;
+
 protected:
    GLViewAssignment_FinalProject( const std::vector< std::string >& args );
    virtual void onCreate();
@@ -64,10 +117,14 @@ protected:
    const int JOYSTICK_DEAD_ZONE = 8000; //value that axis movement needs to be larger than
 
 
-   WO* player1 = nullptr;
-   WO* player2 = nullptr;
+   //WO* player1 = nullptr;
+   //WO* player2 = nullptr;
 
-   int playerNum = 0; 
+   WO* playerModel = nullptr;
+
+
+   //playerNum = 0 (Player1) and playerNum = 1 (Player2)
+   static int const playerNum = 1; 
    //int playerNum = 1;
 };
 

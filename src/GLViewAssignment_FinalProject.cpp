@@ -37,14 +37,77 @@
 #include "IndexedGeometrySphereTriStrip.h"
 #include "WOAxesTubes.h"
 #include "AftrTimer.h"
+
+#include "NetMessengerClient.h"
+#include "NetMsgCreateWO.h"
+
 #include <chrono>
 
 using namespace Aftr;
 
+
+NetMsgMacroDefinition(NetMsgControlObjects);
+
+NetMsgControlObjects::NetMsgControlObjects()
+{
+    size = 0;
+
+
+    for (int i = 0; i < 16; i++)
+        m[i] = 0.0;
+
+    ID = -1;
+}
+NetMsgControlObjects::~NetMsgControlObjects() {}
+bool NetMsgControlObjects::toStream(NetMessengerStreamBuffer& os) const {
+
+    os << this->size;
+    os << ID;
+    for (int i = 0; i < 16; i++)
+        os << m[i];
+    return true;
+}
+bool NetMsgControlObjects::fromStream(NetMessengerStreamBuffer& is)
+{
+    is >> this->size;
+    is >> ID;
+    for (int i = 0; i < 16; i++)
+        is >> m[i];
+    return true;
+     
+}
+void NetMsgControlObjects::onMessageArrived()
+{
+    //update cube position and rotation
+    GLViewAssignment_FinalProject* glv = ManagerGLView::getGLViewT<GLViewAssignment_FinalProject>();
+    glv->updateObj(ID, m);
+
+
+}
+
+std::string NetMsgControlObjects::toString()
+{
+    std::stringstream ss;
+    ss << NetMsg::toString();
+    ss << "  Payload: " << this->size << "...\n";
+    return ss.str();
+}
+
+
+
+
 GLViewAssignment_FinalProject* GLViewAssignment_FinalProject::New( const std::vector< std::string >& args )
 {
    GLViewAssignment_FinalProject* glv = new GLViewAssignment_FinalProject( args );
-   glv->init( Aftr::GRAVITY, Vector( 0, 0, -1.0f ), "aftr.conf", PHYSICS_ENGINE_TYPE::petODE );
+   if (playerNum == 0)
+   {
+       glv->init(Aftr::GRAVITY, Vector(0, 0, -1.0f), "player1/player1.conf", PHYSICS_ENGINE_TYPE::petODE);
+   }
+   else
+   {
+       glv->init(Aftr::GRAVITY, Vector(0, 0, -1.0f), "player2/player2.conf", PHYSICS_ENGINE_TYPE::petODE);
+   }
+   //glv->init( Aftr::GRAVITY, Vector( 0, 0, -1.0f ), "player1/player1.conf", PHYSICS_ENGINE_TYPE::petODE );
    glv->onCreate();
    return glv;
 }
@@ -107,6 +170,15 @@ void GLViewAssignment_FinalProject::onCreate()
        control = controllerList[playerNum];
    }
 
+   if (playerNum == 0)
+   {
+       client = NetMessengerClient::New("127.0.0.1", "12684");
+   }
+   else
+   {
+       client = NetMessengerClient::New("127.0.0.1", "12683");
+   }
+
 
 }
 
@@ -133,6 +205,22 @@ void GLViewAssignment_FinalProject::updateWorld()
    controllerMove(); //updates location from controller inputs
    controllerPerspective(); //updates camera angle from controller inputs
 
+   NetMsgControlObjects msag;
+    //set ID
+    msag.ID = this->cam->getID();
+
+    Mat4 m2 = this->cam->getPose();
+
+    for (int i = 0; i < 16; i++)
+    {
+        msag.m[i] = m2[i];
+    }
+
+    msag.size = sizeof(msag);
+
+    //send the infromation
+    //if (client)
+    //    client->sendNetMsgSynchronousTCP(msag);
 
 }
 
@@ -180,6 +268,32 @@ void GLViewAssignment_FinalProject::onKeyUp( const SDL_KeyboardEvent& key )
 }
 
 
+void GLViewAssignment_FinalProject::updateObj(int id, float m[16]) // , float xl, float yl, float zl)
+{
+    //transverse the worldLst to find the corresponding object ID
+    /*for (int i = 0; i < worldLst->size(); i++)
+    {
+        if (id == worldLst->at(i)->getID())
+        {
+            Mat4 m2;
+            for (int i = 0; i < 16; i++)
+            {
+                m2[i] = m[i];
+            }
+
+
+            worldLst->at(i)->setPose(m2);
+        }
+    }*/
+
+    Mat4 m2;
+    for (int i = 0; i < 16; i++)
+    {
+        m2[i] = m[i];
+    }
+    playerModel->setPose(m2);
+}
+
 void GLViewAssignment_FinalProject::controllerMove()
 {
     //ensure there is a controller
@@ -221,14 +335,9 @@ void GLViewAssignment_FinalProject::controllerMove()
     if (xDir == 0.0f && yDir == 0.0f)
         return;
 
-    //Vector pos = player1->getPosition();
-    //pos.x += (xDir/3.0);
-    //pos.y += (yDir/3.0); 
-
-    //player1->setPosition(pos);
-
+    float currentZ = this->cam->getPosition().z;
     //move camera position accordingly
-   if (yDir < 0)
+    if (yDir < 0)
         this->cam->moveInLookDirection();
     else if (yDir > 0)
         this->cam->moveOppositeLookDirection();
@@ -238,8 +347,9 @@ void GLViewAssignment_FinalProject::controllerMove()
     else if (xDir > 0)
         this->cam->moveRight();
 
-    Vector newPos = this->cam->getPosition();
-    player1->setPosition(newPos.x+5, newPos.y, newPos.z);
+   Vector currentPos = this->cam->getPosition();
+   currentPos.z = currentZ;
+   this->cam->setPosition(currentPos);
 
 }
 
@@ -304,7 +414,7 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
    Axes::isVisible = true;
    this->glRenderer->isUsingShadowMapping( false ); //set to TRUE to enable shadow mapping, must be using GL 3.2+
 
-   this->cam->setPosition( 15,15,10 );
+   this->cam->setPosition( 15,15,5 );
 
    std::string shinyRedPlasticCube( ManagerEnvironmentConfiguration::getSMM() + "/models/cube4x4x4redShinyPlastic_pp.wrl" );
    std::string wheeledCar( ManagerEnvironmentConfiguration::getSMM() + "/models/rcx_treads.wrl" );
@@ -376,46 +486,21 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
    }
 
    {
-        this->player1 = WO::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO);
-        this->player1->setPosition(Vector(0, 40, 5));
+       this->playerModel = WO::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO);
+       this->playerModel->setPosition(Vector(0, 40, 2));
 
-        this->player1->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
+       this->playerModel->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
 
-        this->player1->upon_async_model_loaded([this]()
-            {
-                ModelMeshSkin& skin = this->player1->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
-
-                //skin.setAmbient(aftrColor4f(0.25f, 0.25f, 0.25f, 1.0f));
-                skin.setAmbient(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));
-                //skin.setDiffuse(aftrColor4f(0.85f, 0.85f, 0.85f, 1.0f));
-                skin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));
-                skin.setSpecular(aftrColor4f(0.2f, 0.2f, 0.2f, 1.0f));
-                skin.setSpecularCoefficient(10);
-
-                //skin.setAmbient(aftrColor4f(0.4f, 0.2f, 0.95f, 1.0f)); //Color of object when it is not in any light
-                //skin.setDiffuse(aftrColor4f(.1f, .1f, .5f, 1.0f)); //Diffuse color components (ie, matte shading color of this object) // Make it blue? Why not?
-                //skin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
-                //skin.setSpecularCoefficient(1000); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
-            });
-
-
-        this->player1->setLabel("Player1");
-        worldLst->push_back(this->player1);
-
-   }
-
-   {
-       this->player2 = WO::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO);
-       this->player2->setPosition(Vector(0, 50, 5));
-
-       this->player2->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
-
-       this->player2->upon_async_model_loaded([this]()
+       this->playerModel->upon_async_model_loaded([this]()
            {
-               ModelMeshSkin& skin = this->player2->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
+               ModelMeshSkin& skin = this->playerModel->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
 
-               skin.setAmbient(aftrColor4f(0.60f, 0.60f, 0.0f, 1.0f));
-               skin.setDiffuse(aftrColor4f(1.0f, 1.0f, 0.0f, 1.0f));
+               //gray character model
+
+               //skin.setAmbient(aftrColor4f(0.25f, 0.25f, 0.25f, 1.0f));
+               skin.setAmbient(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));
+               //skin.setDiffuse(aftrColor4f(0.85f, 0.85f, 0.85f, 1.0f));
+               skin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));
                skin.setSpecular(aftrColor4f(0.2f, 0.2f, 0.2f, 1.0f));
                skin.setSpecularCoefficient(10);
 
@@ -425,11 +510,68 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
                //skin.setSpecularCoefficient(1000); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
            });
 
-
-       this->player2->setLabel("Player2");
-       worldLst->push_back(this->player2);
+       this->playerModel->setLabel("Player1");
+       worldLst->push_back(this->playerModel);
    }
+   //{
+   //    //if player 2, load player1 model (grey)
+   //    if (playerNum == 1)
+   //    {
+   //        this->playerModel = WO::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO);
+   //        this->playerModel->setPosition(Vector(0, 40, 5));
 
+   //        this->playerModel->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
+
+   //        this->playerModel->upon_async_model_loaded([this]()
+   //            {
+   //                ModelMeshSkin& skin = this->playerModel->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
+
+   //                //gray character model
+
+   //                //skin.setAmbient(aftrColor4f(0.25f, 0.25f, 0.25f, 1.0f));
+   //                skin.setAmbient(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));
+   //                //skin.setDiffuse(aftrColor4f(0.85f, 0.85f, 0.85f, 1.0f));
+   //                skin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));
+   //                skin.setSpecular(aftrColor4f(0.2f, 0.2f, 0.2f, 1.0f));
+   //                skin.setSpecularCoefficient(10);
+
+   //                //skin.setAmbient(aftrColor4f(0.4f, 0.2f, 0.95f, 1.0f)); //Color of object when it is not in any light
+   //                //skin.setDiffuse(aftrColor4f(.1f, .1f, .5f, 1.0f)); //Diffuse color components (ie, matte shading color of this object) // Make it blue? Why not?
+   //                //skin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
+   //                //skin.setSpecularCoefficient(1000); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
+   //            });
+
+
+   //        this->playerModel->setLabel("Player1");
+   //        worldLst->push_back(this->playerModel);
+   //    }
+   //    //if player 1, load player2 model (yellow)
+   //    else
+   //    {
+   //        this->playerModel = WO::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO);
+   //        this->playerModel->setPosition(Vector(0, 50, 5));
+
+   //        this->playerModel->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
+
+   //        this->playerModel->upon_async_model_loaded([this]()
+   //            {
+   //                ModelMeshSkin& skin = this->playerModel->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
+
+   //                //yellow character model
+   //                skin.setAmbient(aftrColor4f(0.60f, 0.60f, 0.0f, 1.0f));
+   //                skin.setDiffuse(aftrColor4f(1.0f, 1.0f, 0.0f, 1.0f));
+   //                skin.setSpecular(aftrColor4f(0.2f, 0.2f, 0.2f, 1.0f));
+   //                skin.setSpecularCoefficient(10);
+
+   //            });
+
+
+   //        this->playerModel->setLabel("Player2");
+   //        worldLst->push_back(this->playerModel);
+   //    }
+       
+
+   // }
 
    {
       //Make a sphere
