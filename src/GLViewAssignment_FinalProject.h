@@ -121,10 +121,11 @@ protected:
    //WO* player2 = nullptr;
 
    WO* playerModel = nullptr;
+   WO* ball = nullptr;
 
 
    //playerNum = 0 (Player1) and playerNum = 1 (Player2)
-   static int const playerNum = 1; 
+   static int const playerNum = 0; 
    //int playerNum = 1;
 };
 
