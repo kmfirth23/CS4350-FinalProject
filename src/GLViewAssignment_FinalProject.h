@@ -134,6 +134,11 @@ public:
    /// </summary>
    virtual void controllerPerspective();
 
+   /// <summary>
+   /// Use buttons in the game
+   /// </summary>
+   virtual void controllerButtons();
+
 
    /// <summary>
    /// takes the position and rotations of the cube and updates them accordingly
@@ -177,7 +182,7 @@ protected:
 
    bool throwBall = false;
    PhysWOSphere* thrBa = nullptr;
-
+   bool isReleased = true; //button status changes
 
    //playerNum = 0 (Player1) and playerNum = 1 (Player2)
    static int const playerNum = 1; 

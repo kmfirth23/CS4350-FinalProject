@@ -61,6 +61,8 @@ NetMsgControlObjects::NetMsgControlObjects()
         m[i] = 0.0;
 
     ID = -1;
+
+    //messType = 0;
 }
 NetMsgControlObjects::~NetMsgControlObjects() {}
 bool NetMsgControlObjects::toStream(NetMessengerStreamBuffer& os) const {
@@ -346,6 +348,7 @@ void GLViewAssignment_FinalProject::updateWorld()
    //Customize the world's behavior. Typically one would call a function to keep this short
    //but for the sake of a minimial example, we'll do something mildly interesting here
 
+
    if (throwBall)
    {
 
@@ -368,6 +371,25 @@ void GLViewAssignment_FinalProject::updateWorld()
        dynamicBody->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, false);
        dynamicBody->addForce(physx::PxVec3(cam->getLookDirection().x * 30, cam->getLookDirection().y * 30, cam->getLookDirection().z * 30), physx::PxForceMode::eIMPULSE, true);
 
+       //NetMsgControlObjects msag1;
+       ////set ID
+       //msag1.ID = this->thrBa->getID();
+
+       //Mat4 m2 = this->thrBa->getPose();
+
+       //for (int i = 0; i < 16; i++)
+       //{
+       //    msag1.m[i] = m2[i];
+       //}
+
+       //msag1.size = sizeof(msag1);
+
+       //////send the infromation
+       //if (client)
+       //    client->sendNetMsgSynchronousTCP(msag1);
+   
+   
+   
    }
 
 
@@ -377,6 +399,7 @@ void GLViewAssignment_FinalProject::updateWorld()
 
    controllerMove(); //updates location from controller inputs
    controllerPerspective(); //updates camera angle from controller inputs
+   controllerButtons(); //call for button pressing
 
    NetMsgControlObjects msag;
     //set ID
@@ -392,8 +415,8 @@ void GLViewAssignment_FinalProject::updateWorld()
     msag.size = sizeof(msag);
 
     ////send the infromation
-    //if (client)
-    //    client->sendNetMsgSynchronousTCP(msag);
+    if (client)
+        client->sendNetMsgSynchronousTCP(msag);
 
     unsigned int dtms = ManagerSDLTime::getTimeSinceLastPhysicsIteration();
     float dt = dtms / 1000.0f;
@@ -619,7 +642,28 @@ void GLViewAssignment_FinalProject::controllerPerspective()
 
 }
 
+void GLViewAssignment_FinalProject::controllerButtons()
+{
+    if (!control)
+        return;
 
+    if (isReleased && (SDL_GameControllerGetButton(control, SDL_CONTROLLER_BUTTON_A) != 0))
+    {
+        throwBall = true;
+        isReleased = false; 
+    }
+    else if (SDL_GameControllerGetButton(control, SDL_CONTROLLER_BUTTON_A) == 0)
+    {
+        isReleased = true;
+    }
+
+
+    /*if (SDL_GameControllerGetButton(control, SDL_CONTROLLER_BUTTON_A) != 0)
+    {
+        throwBall = true;
+    }*/
+
+}
 
 
 
