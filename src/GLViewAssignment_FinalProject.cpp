@@ -62,13 +62,14 @@ NetMsgControlObjects::NetMsgControlObjects()
 
     ID = -1;
 
-    //messType = 0;
+    messType = 0;
 }
 NetMsgControlObjects::~NetMsgControlObjects() {}
 bool NetMsgControlObjects::toStream(NetMessengerStreamBuffer& os) const {
 
     os << this->size;
     os << ID;
+    os << messType;
     for (int i = 0; i < 16; i++)
         os << m[i];
     return true;
@@ -77,6 +78,7 @@ bool NetMsgControlObjects::fromStream(NetMessengerStreamBuffer& is)
 {
     is >> this->size;
     is >> ID;
+    is >> messType;
     for (int i = 0; i < 16; i++)
         is >> m[i];
     return true;
@@ -86,7 +88,7 @@ void NetMsgControlObjects::onMessageArrived()
 {
     //update cube position and rotation
     GLViewAssignment_FinalProject* glv = ManagerGLView::getGLViewT<GLViewAssignment_FinalProject>();
-    glv->updateObj(ID, m);
+    glv->updateObj(messType, m);
 
 
 }
@@ -287,8 +289,8 @@ void GLViewAssignment_FinalProject::onCreate()
            {
                //if a controller is connected push it to the controller list
                std::cout << "Controller connected" << i << "/////////////////////////////////////////////////////" << std::endl;
-               control = tempControl;
-               //controllerList.push_back(tempControl);
+               //control = tempControl;
+               controllerList.push_back(tempControl);
            }
        }
    }
@@ -371,22 +373,22 @@ void GLViewAssignment_FinalProject::updateWorld()
        dynamicBody->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, false);
        dynamicBody->addForce(physx::PxVec3(cam->getLookDirection().x * 30, cam->getLookDirection().y * 30, cam->getLookDirection().z * 30), physx::PxForceMode::eIMPULSE, true);
 
-       //NetMsgControlObjects msag1;
-       ////set ID
-       //msag1.ID = this->thrBa->getID();
+       NetMsgControlObjects msag1;
+       //set ID
+       msag1.ID = this->thrBa->getID();
+       msag1.messType = 1; 
+       Mat4 m2 = this->thrBa->getPose();
 
-       //Mat4 m2 = this->thrBa->getPose();
+       for (int i = 0; i < 16; i++)
+       {
+           msag1.m[i] = m2[i];
+       }
 
-       //for (int i = 0; i < 16; i++)
-       //{
-       //    msag1.m[i] = m2[i];
-       //}
+       msag1.size = sizeof(msag1);
 
-       //msag1.size = sizeof(msag1);
-
-       //////send the infromation
-       //if (client)
-       //    client->sendNetMsgSynchronousTCP(msag1);
+       ////send the infromation
+       if (client)
+           client->sendNetMsgSynchronousTCP(msag1);
    
    
    
@@ -404,7 +406,7 @@ void GLViewAssignment_FinalProject::updateWorld()
    NetMsgControlObjects msag;
     //set ID
     msag.ID = this->cam->getID();
-
+    msag.messType = 0;
     Mat4 m2 = this->cam->getPose();
 
     for (int i = 0; i < 16; i++)
@@ -506,7 +508,7 @@ void GLViewAssignment_FinalProject::onKeyUp( const SDL_KeyboardEvent& key )
 }
 
 
-void GLViewAssignment_FinalProject::updateObj(int id, float m[16]) // , float xl, float yl, float zl)
+void GLViewAssignment_FinalProject::updateObj(int type, float m[16]) // , float xl, float yl, float zl)
 {
     //transverse the worldLst to find the corresponding object ID
     /*for (int i = 0; i < worldLst->size(); i++)
@@ -524,12 +526,44 @@ void GLViewAssignment_FinalProject::updateObj(int id, float m[16]) // , float xl
         }
     }*/
 
-    Mat4 m2;
-    for (int i = 0; i < 16; i++)
+    if (type == 0)
     {
-        m2[i] = m[i];
+        Mat4 m2;
+        for (int i = 0; i < 16; i++)
+        {
+            m2[i] = m[i];
+        }
+        playerModel->setPose(m2);
     }
-    playerModel->setPose(m2);
+    else if (type == 1)
+    {
+        Mat4 m2;
+        for (int i = 0; i < 16; i++)
+        {
+            m2[i] = m[i];
+        }
+
+        Vector loc = Vector(m2[4], m2[8], (m2[12]-0.5));
+        this->thrBa = PhysWOSphere::New(ManagerEnvironmentConfiguration::getLMM() + "/models/beachBall.obj", Vector(1, 1, 1), MESH_SHADING_TYPE::mstAUTO, p, scene, loc);
+        this->thrBa->setPosition(loc);
+        this->thrBa->setLabel("Launch");
+        //this->thrBa->setPose(m2);
+        worldLst->push_back(this->thrBa);
+        throwBall = false;
+
+        physx::PxActor* a = thrBa->pActor;
+
+        a->userData = thrBa;
+
+        physx::PxRigidDynamic* dynamicBody = a->is<physx::PxRigidDynamic>();
+        if (!dynamicBody) return;
+
+        // Make sure it responds to physics
+        dynamicBody->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, false);
+        dynamicBody->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, false);
+        dynamicBody->addForce(physx::PxVec3(cam->getLookDirection().x * 30, cam->getLookDirection().y * 30, cam->getLookDirection().z * 30), physx::PxForceMode::eIMPULSE, true);
+
+    }
 }
 
 void GLViewAssignment_FinalProject::controllerMove()

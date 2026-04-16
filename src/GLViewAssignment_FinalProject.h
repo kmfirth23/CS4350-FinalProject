@@ -6,6 +6,8 @@
 #include "AftrImGui_Assignment_FinalProject.h"
 
 #include "PxPhysicsAPI.h"
+#include "extensions\PxDefaultErrorCallback.h"
+#include "extensions\PxDefaultAllocator.h"
 
 #include "NetMsg.h"
 
@@ -51,6 +53,7 @@ namespace Aftr
        //std::string objectName;
        unsigned int ID;
        float m[16];
+       unsigned int messType;
 
    protected:
    };
@@ -144,9 +147,9 @@ public:
    /// takes the position and rotations of the cube and updates them accordingly
    /// takes the values recieved from the other instance and updates the cubes position
    /// </summary>
-   /// <param name="id"></param> object id
+   /// <param name="id"></param> message type
    /// <param name="m"></param> pose 
-   virtual void updateObj(int id, float m[16]);
+   virtual void updateObj(int type, float m[16]);
 
    std::shared_ptr<NetMessengerClient> client = nullptr;
 
@@ -186,6 +189,7 @@ protected:
 
    //playerNum = 0 (Player1) and playerNum = 1 (Player2)
    static int const playerNum = 1; 
+
    //int playerNum = 1;
 };
 
