@@ -61,6 +61,36 @@ IF( WIN32 ) #MSVC Compiler library paths
                 #    debug "${AFTR_USERLAND_LIB_PATH}/mySampleLibraryNeededInThisModule_debug.lib"
                 #optimized "${CMAKE_SOURCE_DIR}/lib${AFTR_NBITS}/myLocalLib.lib" #Located in ../lib64/ or ../lib32/
                 #    debug "${CMAKE_SOURCE_DIR}/lib${AFTR_NBITS}/myLocalLib.lib"
+                optimized	"${CMAKE_SOURCE_DIR}/../physx/lib/release/PhysX_64.lib"
+					debug	"${CMAKE_SOURCE_DIR}/../physx/lib/debug/PhysX_64.lib"
+				optimized	"${CMAKE_SOURCE_DIR}/../physx/lib/release/LowLevel_static_64.lib"
+					debug	"${CMAKE_SOURCE_DIR}/../physx/lib/debug/LowLevel_static_64.lib"
+				optimized	"${CMAKE_SOURCE_DIR}/../physx/lib/release/LowLevelAABB_static_64.lib"
+					debug	"${CMAKE_SOURCE_DIR}/../physx/lib/debug/LowLevelAABB_static_64.lib"
+				optimized	"${CMAKE_SOURCE_DIR}/../physx/lib/release/LowLevelDynamics_static_64.lib"
+					debug	"${CMAKE_SOURCE_DIR}/../physx/lib/debug/LowLevelDynamics_static_64.lib"
+				optimized	"${CMAKE_SOURCE_DIR}/../physx/lib/release/PhysXCharacterKinematic_static_64.lib"
+					debug	"${CMAKE_SOURCE_DIR}/../physx/lib/debug/PhysXCharacterKinematic_static_64.lib"
+				optimized	"${CMAKE_SOURCE_DIR}/../physx/lib/release/PhysXCommon_64.lib"
+					debug	"${CMAKE_SOURCE_DIR}/../physx/lib/debug/PhysXCommon_64.lib"
+				optimized	"${CMAKE_SOURCE_DIR}/../physx/lib/release/PhysXCooking_64.lib"
+					debug	"${CMAKE_SOURCE_DIR}/../physx/lib/debug/PhysXCooking_64.lib"
+				optimized	"${CMAKE_SOURCE_DIR}/../physx/lib/release/PhysXExtensions_static_64.lib"
+					debug	"${CMAKE_SOURCE_DIR}/../physx/lib/debug/PhysXExtensions_static_64.lib"
+				optimized	"${CMAKE_SOURCE_DIR}/../physx/lib/release/PhysXFoundation_64.lib"
+					debug	"${CMAKE_SOURCE_DIR}/../physx/lib/debug/PhysXFoundation_64.lib"
+				optimized	"${CMAKE_SOURCE_DIR}/../physx/lib/release/PhysXPvdSDK_static_64.lib"
+					debug	"${CMAKE_SOURCE_DIR}/../physx/lib/debug/PhysXPvdSDK_static_64.lib"
+				optimized	"${CMAKE_SOURCE_DIR}/../physx/lib/release/PhysXTask_static_64.lib"
+					debug	"${CMAKE_SOURCE_DIR}/../physx/lib/debug/PhysXTask_static_64.lib"
+				optimized	"${CMAKE_SOURCE_DIR}/../physx/lib/release/PhysXVehicle2_static_64.lib"
+					debug	"${CMAKE_SOURCE_DIR}/../physx/lib/debug/PhysXVehicle2_static_64.lib"
+				optimized	"${CMAKE_SOURCE_DIR}/../physx/lib/release/PVDRuntime_64.lib"
+					debug	"${CMAKE_SOURCE_DIR}/../physx/lib/debug/PVDRuntime_64.lib"
+				optimized	"${CMAKE_SOURCE_DIR}/../physx/lib/release/SceneQuery_static_64.lib"
+					debug	"${CMAKE_SOURCE_DIR}/../physx/lib/debug/SceneQuery_static_64.lib"
+				optimized	"${CMAKE_SOURCE_DIR}/../physx/lib/release/SimulationController_static_64.lib"
+					debug	"${CMAKE_SOURCE_DIR}/../physx/lib/debug/SimulationController_static_64.lib"
                          )
 ENDIF()
 
@@ -80,7 +110,8 @@ ENDIF()
 TARGET_INCLUDE_DIRECTORIES( ${PROJECT_NAME} PRIVATE 
                            #"${AFTR_USR_INCLUDE_DIR}"
                            #"${CMAKE_SOURCE_DIR}/../my3rdPartyLib/include/"
-                          )
+							${CMAKE_SOURCE_DIR}/../physx/include/
+						  )
 
 
 

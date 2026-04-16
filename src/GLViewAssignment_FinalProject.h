@@ -5,6 +5,8 @@
 #include "AftrImGui_WO_Editor.h"
 #include "AftrImGui_Assignment_FinalProject.h"
 
+#include "PxPhysicsAPI.h"
+
 #include "NetMsg.h"
 
 #include "NetMessengerClient.h"
@@ -51,6 +53,49 @@ namespace Aftr
        float m[16];
 
    protected:
+   };
+
+   //physics sphere class
+   class PhysWOSphere : public WO
+   {
+   public:
+
+       physx::PxActor* pActor = nullptr;
+
+
+       static PhysWOSphere* New(const std::string& path, Vector scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene, const Vector& loc);
+
+       void onCreate(const std::string& path, const Vector& scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene, const Vector& loc);
+
+       void updatePoseFromPhysicsEngine(physx::PxActor* a);
+
+       virtual void setPosition(float x, float y, float z) override;
+       virtual void setPosition(Vector pos);
+
+   protected:
+       PhysWOSphere(physx::PxPhysics* p, physx::PxScene* s);
+
+   };
+
+
+   //class for plane physics
+   class PhysPlaneWO : public WO
+   {
+   public:
+
+       physx::PxActor* pActor = nullptr;
+
+       //static PhysWO* New(const std::string& modelFileName);
+
+       static PhysPlaneWO* New(const std::string& path, Vector scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene);
+
+       void onCreate(const std::string& path, const Vector& scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene);
+
+       //void updatePoseFromPhysicsEngine(physx::PxActor* a);
+
+   protected:
+       PhysPlaneWO(physx::PxPhysics* p, physx::PxScene* s);
+
    };
 
 /**
@@ -100,6 +145,13 @@ public:
 
    std::shared_ptr<NetMessengerClient> client = nullptr;
 
+   physx::PxDefaultAllocator a;
+   physx::PxDefaultErrorCallback e;
+
+   physx::PxFoundation* f;
+   physx::PxPhysics* p;
+   physx::PxScene* scene;
+
 protected:
    GLViewAssignment_FinalProject( const std::vector< std::string >& args );
    virtual void onCreate();
@@ -123,9 +175,12 @@ protected:
    WO* playerModel = nullptr;
    WO* ball = nullptr;
 
+   bool throwBall = false;
+   PhysWOSphere* thrBa = nullptr;
+
 
    //playerNum = 0 (Player1) and playerNum = 1 (Player2)
-   static int const playerNum = 0; 
+   static int const playerNum = 1; 
    //int playerNum = 1;
 };
 

@@ -41,6 +41,10 @@
 #include "NetMessengerClient.h"
 #include "NetMsgCreateWO.h"
 
+#include "extensions\PxDefaultErrorCallback.h"
+#include "extensions\PxDefaultAllocator.h"
+#include "PxPhysicsAPI.h"
+
 #include <chrono>
 
 using namespace Aftr;
@@ -94,6 +98,116 @@ std::string NetMsgControlObjects::toString()
 }
 
 
+PhysWOSphere::PhysWOSphere(physx::PxPhysics* p, physx::PxScene* s) : IFace(this), WO() {
+
+}
+
+PhysWOSphere* PhysWOSphere::New(const std::string& path, Vector scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene, const Vector& loc)
+{
+    //call onCreate
+    PhysWOSphere* wo = new PhysWOSphere(p, scene);
+    wo->onCreate(path, scale, mst, p, scene, loc);
+    return wo;
+}
+void PhysWOSphere::onCreate(const std::string& path, const Vector& scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene, const Vector& loc)
+{
+    //call parent onCreate
+    WO::onCreate(path, scale, mst);
+    //create a physx material and shape for the object 
+    physx::PxMaterial* gMaterial = p->createMaterial(0.6f, 0.5f, 0.6f);
+    physx::PxShape* shape = p->createShape(physx::PxSphereGeometry(0.5), *gMaterial, true);
+    physx::PxTransform t(loc.x, loc.y, loc.z);
+
+    physx::PxRigidDynamic* a = p->createRigidDynamic(t);
+    a->attachShape(*shape);
+
+    //set physx object to the WO object
+    a->userData = this;
+    this->pActor = a;
+
+    //add physx actor to the scene
+    scene->addActor(*a);
+
+    //this->setDisplayMatrix->addActor(*a);
+}
+
+void PhysWOSphere::setPosition(float x, float y, float z)
+{
+    //set WO object position
+    WO::setPosition(x, y, z);
+
+    //set physics object position
+    physx::PxRigidDynamic* dynamic = pActor->is<physx::PxRigidDynamic>();
+    if (!dynamic) return;
+    physx::PxTransform t = dynamic->getGlobalPose();
+    t.p = physx::PxVec3(x, y, z);
+    dynamic->setGlobalPose(t);
+
+}
+
+
+void PhysWOSphere::setPosition(Vector pos)
+{
+    //set WO object position
+    WO::setPosition(pos.x, pos.y, pos.z);
+
+    //set physics object position
+    physx::PxRigidDynamic* dynamic = pActor->is<physx::PxRigidDynamic>();
+    if (!dynamic) return;
+    physx::PxTransform t = dynamic->getGlobalPose();
+    t.p = physx::PxVec3(pos.x, pos.y, pos.z);
+    dynamic->setGlobalPose(t);
+}
+void PhysWOSphere::updatePoseFromPhysicsEngine(physx::PxActor* a)
+{
+    //use physx pose to set wo pose
+    if (!a)
+        return;
+    physx::PxRigidDynamic* dynamic = a->is<physx::PxRigidDynamic>();
+    if (!dynamic) return;
+
+    physx::PxTransform t = dynamic->getGlobalPose();
+
+    physx::PxMat44 m(t);
+
+    Mat4 m3;
+    // float m2[16];
+    for (int i = 0; i < 16; i++)
+    {
+        m3[i] = m(i % 4, i / 4);
+    }
+
+    this->setPose(m3);
+
+
+}
+
+
+PhysPlaneWO::PhysPlaneWO(physx::PxPhysics* p, physx::PxScene* s) : IFace(this), WO() {
+
+}
+
+PhysPlaneWO* PhysPlaneWO::New(const std::string& path, Vector scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene)
+{
+    PhysPlaneWO* wo = new PhysPlaneWO(p, scene);
+    wo->onCreate(path, scale, mst, p, scene);
+    return wo;
+}
+void PhysPlaneWO::onCreate(const std::string& path, const Vector& scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene)
+{
+    WO::onCreate(path, scale, mst);
+    physx::PxMaterial* gMaterial = p->createMaterial(0.7f, 0.5f, 0.1f);
+
+    physx::PxRigidStatic* a = physx::PxCreatePlane(*p, physx::PxPlane(0, 0, 1, 0), *gMaterial);
+
+    a->userData = this;
+    this->pActor = a;
+
+    scene->addActor(*a);
+
+}
+
+
 GLViewAssignment_FinalProject* GLViewAssignment_FinalProject::New( const std::vector< std::string >& args )
 {
    GLViewAssignment_FinalProject* glv = new GLViewAssignment_FinalProject( args );
@@ -126,6 +240,20 @@ GLViewAssignment_FinalProject::GLViewAssignment_FinalProject( const std::vector<
    //    calls GLView::onCreate()
 
    //GLViewAssignment_FinalProject::onCreate() is invoked after this module's LoadMap() is completed.
+
+    f = PxCreateFoundation(PX_PHYSICS_VERSION, a, e);
+    p = PxCreatePhysics(PX_PHYSICS_VERSION, *f, physx::PxTolerancesScale(), false, nullptr);
+    physx::PxSceneDesc sc = physx::PxSceneDesc(p->getTolerancesScale());
+
+    sc.filterShader = physx::PxDefaultSimulationFilterShader;
+    sc.cpuDispatcher = physx::PxDefaultCpuDispatcherCreate(2);
+
+    scene = p->createScene(sc);
+    scene->setFlag(physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS, true);
+
+    scene->setGravity(physx::PxVec3(0.0f, 0.0f, -9.8));
+
+
 }
 
 
@@ -144,7 +272,7 @@ void GLViewAssignment_FinalProject::onCreate()
    this->setActorChaseType( STANDARDEZNAV ); //Default is STANDARDEZNAV mode
    //this->setNumPhysicsStepsPerRender( 0 ); //pause physics engine on start up; will remain paused till set to 1
 
-   // find all available controllers
+   //find all available controllers
    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0) {
        std::cerr << "SDL could not initialize! SDL Error: " << SDL_GetError() << std::endl;
    }
@@ -156,8 +284,9 @@ void GLViewAssignment_FinalProject::onCreate()
            if (tempControl)
            {
                //if a controller is connected push it to the controller list
-               std::cout << "Controller connected" << std::endl;
-               controllerList.push_back(tempControl);
+               std::cout << "Controller connected" << i << "/////////////////////////////////////////////////////" << std::endl;
+               control = tempControl;
+               //controllerList.push_back(tempControl);
            }
        }
    }
@@ -167,6 +296,27 @@ void GLViewAssignment_FinalProject::onCreate()
    {
        control = controllerList[playerNum];
    }
+
+   /*if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0)
+   {
+       std::cerr << "SDL could not initialize! SDL Error: " << SDL_GetError() << std::endl;
+   }
+   else{ 
+
+       if (SDL_IsGameController(0) && playerNum == 0)
+       {
+           control = SDL_GameControllerOpen(0);
+           if(control)
+               std::cout << "Controller connected" << 0 << "/////////////////////////////////////////////////////" << std::endl;
+       }
+       else if (SDL_IsGameController(1) && playerNum == 1)
+       {
+           control = SDL_GameControllerOpen(1);
+           if(control)
+               std::cout << "Controller connected" << 1 << "/////////////////////////////////////////////////////" << std::endl;
+       }
+
+   }*/
 
    if (playerNum == 0)
    {
@@ -196,6 +346,31 @@ void GLViewAssignment_FinalProject::updateWorld()
    //Customize the world's behavior. Typically one would call a function to keep this short
    //but for the sake of a minimial example, we'll do something mildly interesting here
 
+   if (throwBall)
+   {
+
+       Vector loc = Vector(cam->getPosition().x, cam->getPosition().y, cam->getPosition().z - 0.5);
+       this->thrBa = PhysWOSphere::New(ManagerEnvironmentConfiguration::getLMM() + "/models/beachBall.obj", Vector(1, 1, 1), MESH_SHADING_TYPE::mstAUTO, p, scene, loc);
+       this->thrBa->setPosition(loc);
+       this->thrBa->setLabel("Launch");
+       worldLst->push_back(this->thrBa);
+       throwBall = false;
+
+       physx::PxActor* a = thrBa->pActor;
+
+       a->userData = thrBa;
+
+       physx::PxRigidDynamic* dynamicBody = a->is<physx::PxRigidDynamic>();
+       if (!dynamicBody) return;
+
+       // Make sure it responds to physics
+       dynamicBody->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, false);
+       dynamicBody->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, false);
+       dynamicBody->addForce(physx::PxVec3(cam->getLookDirection().x * 30, cam->getLookDirection().y * 30, cam->getLookDirection().z * 30), physx::PxForceMode::eIMPULSE, true);
+
+   }
+
+
    if( this->gulfstream != nullptr && this->moon != nullptr )
       this->moon->setPose( 
          this->orbit_gui.compute_pose( this->gulfstream->getModel()->getPose() ) );
@@ -216,9 +391,51 @@ void GLViewAssignment_FinalProject::updateWorld()
 
     msag.size = sizeof(msag);
 
-    //send the infromation
-    if (client)
-        client->sendNetMsgSynchronousTCP(msag);
+    ////send the infromation
+    //if (client)
+    //    client->sendNetMsgSynchronousTCP(msag);
+
+    unsigned int dtms = ManagerSDLTime::getTimeSinceLastPhysicsIteration();
+    float dt = dtms / 1000.0f;
+    scene->simulate(dt);
+    scene->fetchResults(true);
+
+    physx::PxU32 errorState = 0;
+
+
+    {
+        //NOTE: be careful here, this works for spheres need solution when giving the player cube shape/////////
+        physx::PxU32 numActors = 0; 
+        physx::PxActor** actors = scene->getActiveActors(numActors);
+        for (physx::PxU32 i = 0; i < numActors; i++) 
+        {
+            physx::PxActor* actor = actors[i];
+            //update the WO object Pose from the physics engine
+            PhysWOSphere* wo = static_cast<PhysWOSphere*>(actor->userData);
+            wo->updatePoseFromPhysicsEngine(actor);
+
+            //send the message
+            PhysWOSphere* wo2 = static_cast<PhysWOSphere*>(actor->userData);
+            //NetMsgControlObjects msag;
+
+            ////set ID
+            //msag.ID = wo2->getID();
+
+            //Mat4 m2 = wo2->getPose();
+
+            //for (int i = 0; i < 16; i++)
+            //{
+            //    msag.m[i] = m2[i];
+            //}
+
+            //msag.size = sizeof(msag);
+
+            ////send the infromation
+            //if (client)
+            //    client->sendNetMsgSynchronousTCP(msag);
+
+        }
+    }
 
 }
 
@@ -353,6 +570,12 @@ void GLViewAssignment_FinalProject::controllerMove()
 
 void GLViewAssignment_FinalProject::controllerPerspective()
 {
+
+    if (!control)
+    {
+        return;
+    }
+
     //get values from right joystick
     int xright = SDL_GameControllerGetAxis(control, SDL_CONTROLLER_AXIS_RIGHTX);
     int yright = SDL_GameControllerGetAxis(control, SDL_CONTROLLER_AXIS_RIGHTY);
@@ -451,7 +674,7 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
 
    { 
       ////Create the infinite grass plane (the floor)
-      WO* wo = WO::New( grass, Vector( 1, 1, 1 ), MESH_SHADING_TYPE::mstFLAT );
+       PhysPlaneWO* wo = PhysPlaneWO::New(grass, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT, p, scene);
       wo->setPosition( Vector( 0, 0, 0 ) );
       wo->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
       wo->upon_async_model_loaded( [wo]()
@@ -651,13 +874,14 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
       this->gui->subscribe_drawImGuiWidget(
          [=,this]() //this is a lambda, the capture clause is in [], the input argument list is in (), and the body is in {}
          {
-            //We defined the callbacks above, now hook them into the menu labels
-            menu.attach( "Edit", "Show WO Editor", woEditFunc );
-            menu.attach( "Demos", "Show Default ImGui Demo", showDemoWindow_ImGui );
-            menu.attach( "Demos", "Show Default ImPlot Demo", showDemoWindow_ImGuiPlot );
-            menu.attach( "Demos", "Show Aftr ImGui w/ Markdown & File Dialogs", showDemoWindow_AftrDemo );
-            menu.attach( "Orbit Gui", "Show Orbit", show_moon_orbit_params, true );
-            menu.draw(); //The menu.draw() is the entry point for your gui. It is called once per frame to draw the GUI.
+              ImGui::Begin("Throw");
+              if (ImGui::Button("Throw Ball"))
+              {
+                  throwBall = true;
+              }
+
+              ImGui::End();
+              
          } );
       this->worldLst->push_back( this->gui );
    }
