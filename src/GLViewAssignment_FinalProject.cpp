@@ -543,13 +543,14 @@ void GLViewAssignment_FinalProject::updateObj(int type, float m[16]) // , float 
             m2[i] = m[i];
         }
 
-        Vector loc = Vector(m2[4], m2[8], (m2[12]-0.5));
+        //Vector loc = Vector(m2[13], m2[14], (m2[15] - 0.5));
+        Vector loc = Vector(playerModel->getPosition().x, playerModel->getPosition().y, playerModel->getPosition().z);
         this->thrBa = PhysWOSphere::New(ManagerEnvironmentConfiguration::getLMM() + "/models/beachBall.obj", Vector(1, 1, 1), MESH_SHADING_TYPE::mstAUTO, p, scene, loc);
         this->thrBa->setPosition(loc);
         this->thrBa->setLabel("Launch");
-        //this->thrBa->setPose(m2);
+        this->thrBa->setPose(m2);
         worldLst->push_back(this->thrBa);
-        throwBall = false;
+        //throwBall = false;
 
         physx::PxActor* a = thrBa->pActor;
 
@@ -561,7 +562,7 @@ void GLViewAssignment_FinalProject::updateObj(int type, float m[16]) // , float 
         // Make sure it responds to physics
         dynamicBody->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, false);
         dynamicBody->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, false);
-        dynamicBody->addForce(physx::PxVec3(cam->getLookDirection().x * 30, cam->getLookDirection().y * 30, cam->getLookDirection().z * 30), physx::PxForceMode::eIMPULSE, true);
+        dynamicBody->addForce(physx::PxVec3(playerModel->getLookDirection().x * 30, playerModel->getLookDirection().y * 30, playerModel->getLookDirection().z * 30), physx::PxForceMode::eIMPULSE, true);
 
     }
 }
