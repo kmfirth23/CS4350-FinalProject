@@ -58,6 +58,28 @@ namespace Aftr
    protected:
    };
 
+   class PhysWOPlayer : public WO
+   {
+   public:
+
+       physx::PxActor* pActor = nullptr;
+
+
+       static PhysWOPlayer* New(const std::string& path, Vector scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene, const Vector& loc);
+
+       void onCreate(const std::string& path, const Vector& scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene, const Vector& loc);
+
+       void updatePoseFromPhysicsEngine(physx::PxActor* a);
+
+       virtual void setPosition(float x, float y, float z) override;
+       virtual void setPosition(Vector pos);
+       virtual void setPose(Mat4 thePose);
+
+   protected:
+       PhysWOPlayer(physx::PxPhysics* p, physx::PxScene* s);
+
+   };
+
    //physics sphere class
    class PhysWOSphere : public WO
    {
@@ -129,6 +151,10 @@ public:
    virtual void onKeyUp( const SDL_KeyboardEvent& key ) override;
 
    /// <summary>
+   /// if throw ball, call throw ball
+   /// </summary>
+   void throwBallFunction();
+   /// <summary>
    /// Moves camera based on controller left joystick
    /// </summary>
    virtual void controllerMove();
@@ -180,8 +206,9 @@ protected:
    //WO* player1 = nullptr;
    //WO* player2 = nullptr;
 
-   WO* playerModel = nullptr;
+   PhysWOPlayer* playerModel = nullptr;
    WO* ball = nullptr;
+   //WO* me = nullptr;
 
    bool throwBall = false;
    PhysWOSphere* thrBa = nullptr;

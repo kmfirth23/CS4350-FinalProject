@@ -102,6 +102,116 @@ std::string NetMsgControlObjects::toString()
 }
 
 
+PhysWOPlayer::PhysWOPlayer(physx::PxPhysics* p, physx::PxScene* s) : IFace(this), WO() {
+
+}
+
+PhysWOPlayer* PhysWOPlayer::New(const std::string& path, Vector scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene, const Vector& loc)
+{
+    //call onCreate
+    PhysWOPlayer* wo = new PhysWOPlayer(p, scene);
+    wo->onCreate(path, scale, mst, p, scene, loc);
+    return wo;
+}
+void PhysWOPlayer::onCreate(const std::string& path, const Vector& scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene, const Vector& loc)
+{
+    //call parent onCreate
+    WO::onCreate(path, scale, mst);
+    //create a physx material and shape for the object 
+    physx::PxMaterial* gMaterial = p->createMaterial(0.5f, 0.5f, 0.0f);
+    
+    physx::PxTransform t(loc.x, loc.y, loc.z);
+    physx::PxRigidDynamic* a = p->createRigidDynamic(t);
+    a->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
+    physx::PxShape* boxshape = p->createShape(physx::PxBoxGeometry(1, 1, 2), *gMaterial, true);
+    a->attachShape(*boxshape);
+    physx::PxShape* sphereShape = p->createShape(physx::PxSphereGeometry(1.0f), *gMaterial, true);
+    physx::PxTransform spherePosition(physx::PxVec3(0, 0, 2.875f));
+    sphereShape->setLocalPose(spherePosition);
+    a->attachShape(*sphereShape);
+
+    //set physx object to the WO object
+    a->userData = this;
+    this->pActor = a;
+
+    //add physx actor to the scene
+    scene->addActor(*a);
+
+    //this->setDisplayMatrix->addActor(*a);
+}
+
+void PhysWOPlayer::setPosition(float x, float y, float z)
+{
+    //set WO object position
+    WO::setPosition(x, y, z);
+
+    //set physics object position
+    physx::PxRigidDynamic* dynamic = pActor->is<physx::PxRigidDynamic>();
+    if (!dynamic) return;
+    physx::PxTransform t = dynamic->getGlobalPose();
+    t.p = physx::PxVec3(x, y, z);
+    dynamic->setGlobalPose(t);
+
+}
+
+
+void PhysWOPlayer::setPosition(Vector pos)
+{
+    //set WO object position
+    WO::setPosition(pos.x, pos.y, pos.z);
+
+    //set physics object position
+    physx::PxRigidDynamic* dynamic = pActor->is<physx::PxRigidDynamic>();
+    if (!dynamic) return;
+    physx::PxTransform t = dynamic->getGlobalPose();
+    t.p = physx::PxVec3(pos.x, pos.y, pos.z);
+    dynamic->setGlobalPose(t);
+}
+
+void PhysWOPlayer::setPose(Mat4 thePos)
+{
+    //set WO Pose 
+    WO::setPose(thePos);
+
+    ////set Physics pose
+    physx::PxRigidDynamic* dynamic = pActor->is<physx::PxRigidDynamic>();
+    if (!dynamic) return;
+    physx::PxMat44 m;
+
+    for (int i = 0; i < 16; i++)
+    {
+        m(i % 4, i / 4) = thePos[i];
+    }
+
+    physx::PxTransform t(m);
+    //dynamic->setGlobalPose(t);
+    dynamic->setKinematicTarget(t);
+
+}
+void PhysWOPlayer::updatePoseFromPhysicsEngine(physx::PxActor* a)
+{
+    ////use physx pose to set wo pose
+    //if (!a)
+    //    return;
+    //physx::PxRigidDynamic* dynamic = a->is<physx::PxRigidDynamic>();
+    //if (!dynamic) return;
+
+    //physx::PxTransform t = dynamic->getGlobalPose();
+
+    //physx::PxMat44 m(t);
+
+    //Mat4 m3;
+    //// float m2[16];
+    //for (int i = 0; i < 16; i++)
+    //{
+    //    m3[i] = m(i % 4, i / 4);
+    //}
+
+    //this->setPose(m3);
+
+
+}
+
 PhysWOSphere::PhysWOSphere(physx::PxPhysics* p, physx::PxScene* s) : IFace(this), WO() {
 
 }
@@ -162,6 +272,7 @@ void PhysWOSphere::setPosition(Vector pos)
     t.p = physx::PxVec3(pos.x, pos.y, pos.z);
     dynamic->setGlobalPose(t);
 }
+
 void PhysWOSphere::updatePoseFromPhysicsEngine(physx::PxActor* a)
 {
     //use physx pose to set wo pose
@@ -341,6 +452,46 @@ GLViewAssignment_FinalProject::~GLViewAssignment_FinalProject()
 }
 
 
+void GLViewAssignment_FinalProject::throwBallFunction()
+{
+    Vector loc = Vector(cam->getPosition().x, cam->getPosition().y, cam->getPosition().z - 0.5);
+    this->thrBa = PhysWOSphere::New(ManagerEnvironmentConfiguration::getLMM() + "/models/beachBall.obj", Vector(1, 1, 1), MESH_SHADING_TYPE::mstAUTO, p, scene, loc);
+    this->thrBa->setPosition(loc);
+    this->thrBa->setLabel("Launch");
+    worldLst->push_back(this->thrBa);
+    throwBall = false;
+
+    physx::PxActor* a = thrBa->pActor;
+
+    a->userData = thrBa;
+
+    physx::PxRigidDynamic* dynamicBody = a->is<physx::PxRigidDynamic>();
+    if (!dynamicBody) return;
+
+    // Make sure it responds to physics
+    dynamicBody->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, false);
+    dynamicBody->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, false);
+    dynamicBody->addForce(physx::PxVec3(cam->getLookDirection().x * 30, cam->getLookDirection().y * 30, cam->getLookDirection().z * 30), physx::PxForceMode::eIMPULSE, true);
+
+    NetMsgControlObjects msag1;
+    //set ID
+    msag1.ID = this->thrBa->getID();
+    msag1.messType = 1;
+    Mat4 m2 = this->thrBa->getPose();
+
+    for (int i = 0; i < 16; i++)
+    {
+        msag1.m[i] = m2[i];
+    }
+
+    msag1.size = sizeof(msag1);
+
+    ////send the infromation
+    if (client)
+        client->sendNetMsgSynchronousTCP(msag1);
+
+}
+
 void GLViewAssignment_FinalProject::updateWorld()
 {
    GLView::updateWorld(); //Just call the parent's update world first.
@@ -353,45 +504,7 @@ void GLViewAssignment_FinalProject::updateWorld()
 
    if (throwBall)
    {
-
-       Vector loc = Vector(cam->getPosition().x, cam->getPosition().y, cam->getPosition().z - 0.5);
-       this->thrBa = PhysWOSphere::New(ManagerEnvironmentConfiguration::getLMM() + "/models/beachBall.obj", Vector(1, 1, 1), MESH_SHADING_TYPE::mstAUTO, p, scene, loc);
-       this->thrBa->setPosition(loc);
-       this->thrBa->setLabel("Launch");
-       worldLst->push_back(this->thrBa);
-       throwBall = false;
-
-       physx::PxActor* a = thrBa->pActor;
-
-       a->userData = thrBa;
-
-       physx::PxRigidDynamic* dynamicBody = a->is<physx::PxRigidDynamic>();
-       if (!dynamicBody) return;
-
-       // Make sure it responds to physics
-       dynamicBody->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, false);
-       dynamicBody->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, false);
-       dynamicBody->addForce(physx::PxVec3(cam->getLookDirection().x * 30, cam->getLookDirection().y * 30, cam->getLookDirection().z * 30), physx::PxForceMode::eIMPULSE, true);
-
-       NetMsgControlObjects msag1;
-       //set ID
-       msag1.ID = this->thrBa->getID();
-       msag1.messType = 1; 
-       Mat4 m2 = this->thrBa->getPose();
-
-       for (int i = 0; i < 16; i++)
-       {
-           msag1.m[i] = m2[i];
-       }
-
-       msag1.size = sizeof(msag1);
-
-       ////send the infromation
-       if (client)
-           client->sendNetMsgSynchronousTCP(msag1);
-   
-   
-   
+       throwBallFunction();
    }
 
 
@@ -403,6 +516,7 @@ void GLViewAssignment_FinalProject::updateWorld()
    controllerPerspective(); //updates camera angle from controller inputs
    controllerButtons(); //call for button pressing
 
+   //send camera messages
    NetMsgControlObjects msag;
     //set ID
     msag.ID = this->cam->getID();
@@ -416,14 +530,21 @@ void GLViewAssignment_FinalProject::updateWorld()
 
     msag.size = sizeof(msag);
 
+  
+   // me->setPose(this->cam->getPose());
+
+
     ////send the infromation
     if (client)
         client->sendNetMsgSynchronousTCP(msag);
 
+    //update physics
     unsigned int dtms = ManagerSDLTime::getTimeSinceLastPhysicsIteration();
     float dt = dtms / 1000.0f;
     scene->simulate(dt);
     scene->fetchResults(true);
+
+
 
     physx::PxU32 errorState = 0;
 
@@ -712,9 +833,9 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
    ManagerOpenGLState::GL_NEAR_PLANE( 0.1f );
    ManagerOpenGLState::enableFrustumCulling( false );
    Axes::isVisible = true;
-   this->glRenderer->isUsingShadowMapping( false ); //set to TRUE to enable shadow mapping, must be using GL 3.2+
+   this->glRenderer->isUsingShadowMapping( true ); //set to TRUE to enable shadow mapping, must be using GL 3.2+
 
-   this->cam->setPosition( 15,15,5 );
+   this->cam->setPosition( 15,15,2.875 );
 
    std::string shinyRedPlasticCube( ManagerEnvironmentConfiguration::getSMM() + "/models/cube4x4x4redShinyPlastic_pp.wrl" );
    std::string wheeledCar( ManagerEnvironmentConfiguration::getSMM() + "/models/rcx_treads.wrl" );
@@ -817,8 +938,8 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
        //if player 2, load player1 model (grey)
        if (playerNum == 1)
        {
-           this->playerModel = WO::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO);
-           this->playerModel->setPosition(Vector(0, 40, 5));
+           this->playerModel = PhysWOPlayer::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO, p, scene, Vector(0, 40, 2.875));
+           this->playerModel->setPosition(Vector(0, 40, 1.4375));
 
            this->playerModel->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
 
@@ -848,8 +969,8 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
        //if player 1, load player2 model (yellow)
        else
        {
-           this->playerModel = WO::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO);
-           this->playerModel->setPosition(Vector(0, 50, 5));
+           this->playerModel = PhysWOPlayer::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO, p, scene, Vector(0, 50, 2.875));
+           this->playerModel->setPosition(Vector(0, 50, 1.435));
 
            this->playerModel->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
 
