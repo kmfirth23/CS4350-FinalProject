@@ -58,6 +58,28 @@ namespace Aftr
    protected:
    };
 
+   //this has a class onContact
+   // could try to have that called and overload it to increase hit count
+   class MySimulationEventCallBack : public physx::PxSimulationEventCallback
+   {
+   public:
+
+        virtual void onConstraintBreak(physx::PxConstraintInfo* constraints, physx::PxU32 count) {}
+        virtual void onWake(physx::PxActor** actors, physx::PxU32 count) override {}
+        virtual void onSleep(physx::PxActor** actors, physx::PxU32 count) override {}
+        virtual void onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count) override {}
+        virtual void onAdvance(const physx::PxRigidBody *const *bodyBuffer, const physx::PxTransform *poseBugger, const physx::PxU32 count) override {}
+
+        int hitCounter = 0;
+        physx::PxActor* playerActor = nullptr;
+        virtual void onContact(const physx::PxContactPairHeader& pairHeader, const physx::PxContactPair* pairs, physx::PxU32 nbPairs) override;
+   
+   private:
+
+   };
+
+
+
    class PhysWOPlayer : public WO
    {
    public:
@@ -216,8 +238,11 @@ protected:
 
    physx::PxRigidDynamic* camPhys = nullptr;
 
+   MySimulationEventCallBack* callBack = nullptr;
+   int currentNumHits = 0;
+
    //playerNum = 0 (Player1) and playerNum = 1 (Player2)
-   static int const playerNum = 1; 
+   static int const playerNum = 0;
 
 
    //int playerNum = 1;

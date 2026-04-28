@@ -50,6 +50,37 @@
 using namespace Aftr;
 
 
+physx::PxFilterFlags myFilterShader(
+    physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
+    physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
+    physx::PxPairFlags& pairFlags,
+    const void* constantBlock, physx::PxU32 constantBlockSize)
+{
+    // Enable contact reporting for this pair
+    pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT
+        | physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;   // onContact called when touching starts
+       // | physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS // onContact called each step while touching
+       // | physx::PxPairFlag::eNOTIFY_TOUCH_LOST;    // onContact called when contact ends
+
+    return physx::PxFilterFlag::eDEFAULT;
+}
+
+
+void MySimulationEventCallBack::onContact(const physx::PxContactPairHeader& pairHeader, const physx::PxContactPair* pairs, physx::PxU32 nbPairs)
+{
+
+    auto* a0 = pairHeader.actors[0];
+    auto* a1 = pairHeader.actors[1];
+
+    if (a0 == playerActor || a1 == playerActor)
+    {
+        hitCounter++;
+
+    }
+
+
+}
+
 NetMsgMacroDefinition(NetMsgControlObjects);
 
 NetMsgControlObjects::NetMsgControlObjects()
@@ -124,8 +155,10 @@ void PhysWOPlayer::onCreate(const std::string& path, const Vector& scale, MESH_S
     physx::PxRigidDynamic* a = p->createRigidDynamic(t);
     a->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
     physx::PxShape* boxshape = p->createShape(physx::PxBoxGeometry(1, 1, 2), *gMaterial, true);
+    boxshape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, true);
     a->attachShape(*boxshape);
     physx::PxShape* sphereShape = p->createShape(physx::PxSphereGeometry(1.0f), *gMaterial, true);
+    sphereShape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, true);
     physx::PxTransform spherePosition(physx::PxVec3(0, 0, 2.875f));
     sphereShape->setLocalPose(spherePosition);
     a->attachShape(*sphereShape);
@@ -230,6 +263,7 @@ void PhysWOSphere::onCreate(const std::string& path, const Vector& scale, MESH_S
     //create a physx material and shape for the object 
     physx::PxMaterial* gMaterial = p->createMaterial(0.6f, 0.5f, 0.6f);
     physx::PxShape* shape = p->createShape(physx::PxSphereGeometry(0.5), *gMaterial, true);
+    shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, true);
     physx::PxTransform t(loc.x, loc.y, loc.z);
 
     physx::PxRigidDynamic* a = p->createRigidDynamic(t);
@@ -358,10 +392,13 @@ GLViewAssignment_FinalProject::GLViewAssignment_FinalProject( const std::vector<
 
     f = PxCreateFoundation(PX_PHYSICS_VERSION, a, e);
     p = PxCreatePhysics(PX_PHYSICS_VERSION, *f, physx::PxTolerancesScale(), false, nullptr);
+    
+    callBack = new MySimulationEventCallBack();
     physx::PxSceneDesc sc = physx::PxSceneDesc(p->getTolerancesScale());
-
-    sc.filterShader = physx::PxDefaultSimulationFilterShader;
+    
+    sc.filterShader = myFilterShader;
     sc.cpuDispatcher = physx::PxDefaultCpuDispatcherCreate(2);
+    sc.simulationEventCallback = callBack;
 
     scene = p->createScene(sc);
     scene->setFlag(physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS, true);
@@ -412,14 +449,14 @@ void GLViewAssignment_FinalProject::onCreate()
        control = controllerList[playerNum];
    }
 
-   if (playerNum == 0)
+  /* if (playerNum == 0)
    {
        client = NetMessengerClient::New("127.0.0.1", "12684");
    }
    else
    {
        client = NetMessengerClient::New("127.0.0.1", "12683");
-   }
+   }*/
 
    {
        //add a physics actor to the camera
@@ -456,7 +493,7 @@ void GLViewAssignment_FinalProject::throwBallFunction()
 {
     Vector loc1 = Vector(cam->getPosition().x, cam->getPosition().y, cam->getPosition().z); //z - 0.5 to reset
     Vector look = cam->getLookDirection();
-
+    //ensure the ball does not load in inside your physics model
     float xCor = loc1.x + look.x *2;
     float yCor = loc1.y + look.y *2;
     float zCor = loc1.z + look.z *2;
@@ -495,8 +532,8 @@ void GLViewAssignment_FinalProject::throwBallFunction()
     msag1.size = sizeof(msag1);
 
     ////send the infromation
-    if (client)
-        client->sendNetMsgSynchronousTCP(msag1);
+    //if (client)
+    //    client->sendNetMsgSynchronousTCP(msag1);
 
 }
 
@@ -545,7 +582,7 @@ void GLViewAssignment_FinalProject::updateWorld()
     dynamic->setKinematicTarget(t);
 
   
-
+    currentNumHits = callBack->hitCounter;
 
    //send camera messages
    NetMsgControlObjects msag;
@@ -566,8 +603,8 @@ void GLViewAssignment_FinalProject::updateWorld()
 
 
     ////send the infromation
-    if (client)
-        client->sendNetMsgSynchronousTCP(msag);
+    //if (client)
+    //    client->sendNetMsgSynchronousTCP(msag);
 
     //update physics
     unsigned int dtms = ManagerSDLTime::getTimeSinceLastPhysicsIteration();
@@ -906,7 +943,7 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
 
    { 
       ////Create the infinite grass plane (the floor)
-       PhysPlaneWO* wo = PhysPlaneWO::New(grass, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT, p, scene);
+      PhysPlaneWO* wo = PhysPlaneWO::New(grass, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT, p, scene);
       wo->setPosition( Vector( 0, 0, 0 ) );
       wo->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
       wo->upon_async_model_loaded( [wo]()
@@ -941,28 +978,22 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
    //{
    //    this->playerModel = WO::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO);
    //    this->playerModel->setPosition(Vector(0, 40, 2));
-
    //    this->playerModel->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
-
    //    this->playerModel->upon_async_model_loaded([this]()
    //        {
    //            ModelMeshSkin& skin = this->playerModel->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
-
    //            //gray character model
-
    //            //skin.setAmbient(aftrColor4f(0.25f, 0.25f, 0.25f, 1.0f));
    //            skin.setAmbient(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));
    //            //skin.setDiffuse(aftrColor4f(0.85f, 0.85f, 0.85f, 1.0f));
    //            skin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));
    //            skin.setSpecular(aftrColor4f(0.2f, 0.2f, 0.2f, 1.0f));
    //            skin.setSpecularCoefficient(10);
-
    //            //skin.setAmbient(aftrColor4f(0.4f, 0.2f, 0.95f, 1.0f)); //Color of object when it is not in any light
    //            //skin.setDiffuse(aftrColor4f(.1f, .1f, .5f, 1.0f)); //Diffuse color components (ie, matte shading color of this object) // Make it blue? Why not?
    //            //skin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
    //            //skin.setSpecularCoefficient(1000); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
    //        });
-
    //    this->playerModel->setLabel("Player1");
    //    worldLst->push_back(this->playerModel);
    // }
@@ -997,6 +1028,8 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
 
            this->playerModel->setLabel("Player1");
            worldLst->push_back(this->playerModel);
+           callBack->playerActor = this->playerModel->pActor;
+
        }
        //if player 1, load player2 model (yellow)
        else
@@ -1021,6 +1054,7 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
 
            this->playerModel->setLabel("Player2");
            worldLst->push_back(this->playerModel);
+           callBack->playerActor = this->playerModel->pActor;
        }
        
 
@@ -1112,7 +1146,9 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
                   throwBall = true;
               }
 
-              ImGui::End();
+              ImGui::Text("Hits: %d", currentNumHits);
+
+              ImGui::End();                                                                                                             
               
          } );
       this->worldLst->push_back( this->gui );
