@@ -214,8 +214,11 @@ protected:
    PhysWOSphere* thrBa = nullptr;
    bool isReleased = true; //button status changes
 
+   physx::PxRigidDynamic* camPhys = nullptr;
+
    //playerNum = 0 (Player1) and playerNum = 1 (Player2)
    static int const playerNum = 1; 
+
 
    //int playerNum = 1;
 };

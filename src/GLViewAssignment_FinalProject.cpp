@@ -412,27 +412,6 @@ void GLViewAssignment_FinalProject::onCreate()
        control = controllerList[playerNum];
    }
 
-   /*if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0)
-   {
-       std::cerr << "SDL could not initialize! SDL Error: " << SDL_GetError() << std::endl;
-   }
-   else{ 
-
-       if (SDL_IsGameController(0) && playerNum == 0)
-       {
-           control = SDL_GameControllerOpen(0);
-           if(control)
-               std::cout << "Controller connected" << 0 << "/////////////////////////////////////////////////////" << std::endl;
-       }
-       else if (SDL_IsGameController(1) && playerNum == 1)
-       {
-           control = SDL_GameControllerOpen(1);
-           if(control)
-               std::cout << "Controller connected" << 1 << "/////////////////////////////////////////////////////" << std::endl;
-       }
-
-   }*/
-
    if (playerNum == 0)
    {
        client = NetMessengerClient::New("127.0.0.1", "12684");
@@ -442,6 +421,27 @@ void GLViewAssignment_FinalProject::onCreate()
        client = NetMessengerClient::New("127.0.0.1", "12683");
    }
 
+   {
+       //add a physics actor to the camera
+       //does not have a WO attached to it
+       physx::PxMaterial* gMaterial = p->createMaterial(0.5f, 0.5f, 0.0f);
+
+       Vector loc = cam->getPosition();
+
+       physx::PxTransform t(loc.x, loc.y, loc.z);
+       physx::PxRigidDynamic* a = p->createRigidDynamic(t);
+       camPhys = a;
+       a->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
+       physx::PxShape* boxshape = p->createShape(physx::PxBoxGeometry(1, 1, 2), *gMaterial, true);
+       a->attachShape(*boxshape);
+       physx::PxShape* sphereShape = p->createShape(physx::PxSphereGeometry(1.0f), *gMaterial, true);
+       physx::PxTransform spherePosition(physx::PxVec3(0, 0, 2.875f));
+       sphereShape->setLocalPose(spherePosition);
+       a->attachShape(*sphereShape);
+
+       //add physx actor to the scene
+       scene->addActor(*a);
+   }
 
 }
 
@@ -454,7 +454,15 @@ GLViewAssignment_FinalProject::~GLViewAssignment_FinalProject()
 
 void GLViewAssignment_FinalProject::throwBallFunction()
 {
-    Vector loc = Vector(cam->getPosition().x, cam->getPosition().y, cam->getPosition().z - 0.5);
+    Vector loc1 = Vector(cam->getPosition().x, cam->getPosition().y, cam->getPosition().z); //z - 0.5 to reset
+    Vector look = cam->getLookDirection();
+
+    float xCor = loc1.x + look.x *2;
+    float yCor = loc1.y + look.y *2;
+    float zCor = loc1.z + look.z *2;
+    zCor = zCor - 0.5;
+    Vector loc = Vector(xCor, yCor, zCor);
+
     this->thrBa = PhysWOSphere::New(ManagerEnvironmentConfiguration::getLMM() + "/models/beachBall.obj", Vector(1, 1, 1), MESH_SHADING_TYPE::mstAUTO, p, scene, loc);
     this->thrBa->setPosition(loc);
     this->thrBa->setLabel("Launch");
@@ -516,6 +524,29 @@ void GLViewAssignment_FinalProject::updateWorld()
    controllerPerspective(); //updates camera angle from controller inputs
    controllerButtons(); //call for button pressing
 
+
+   //move the physics model for the camera
+   physx::PxRigidDynamic* dynamic = camPhys;
+  // physx::PxTransform t; 
+
+   Mat4 thePos = this->cam->getPose();
+
+   if (!dynamic) return;
+
+    physx::PxMat44 m;
+
+    for (int i = 0; i < 16; i++)
+    {
+        m(i % 4, i / 4) = thePos[i];
+    }
+
+    physx::PxTransform t(m);
+    //dynamic->setGlobalPose(t);
+    dynamic->setKinematicTarget(t);
+
+  
+
+
    //send camera messages
    NetMsgControlObjects msag;
     //set ID
@@ -558,7 +589,8 @@ void GLViewAssignment_FinalProject::updateWorld()
             physx::PxActor* actor = actors[i];
             //update the WO object Pose from the physics engine
             PhysWOSphere* wo = static_cast<PhysWOSphere*>(actor->userData);
-            wo->updatePoseFromPhysicsEngine(actor);
+            if(wo)
+                wo->updatePoseFromPhysicsEngine(actor);
 
             //send the message
             PhysWOSphere* wo2 = static_cast<PhysWOSphere*>(actor->userData);
