@@ -119,6 +119,12 @@ namespace Aftr
        virtual void setPosition(float x, float y, float z) override;
        virtual void setPosition(Vector pos);
 
+       virtual void onUpdateWO();
+
+       float timeAlive = 0.0f;
+       float maxTime = 2.5f;
+       bool timeMet = false;
+
    protected:
        PhysWOSphere(physx::PxPhysics* p, physx::PxScene* s);
 

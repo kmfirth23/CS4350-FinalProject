@@ -50,6 +50,7 @@
 using namespace Aftr;
 
 
+//create own filter shader for the scene to call onContact
 physx::PxFilterFlags myFilterShader(
     physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
     physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
@@ -59,8 +60,6 @@ physx::PxFilterFlags myFilterShader(
     // Enable contact reporting for this pair
     pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT
         | physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;   // onContact called when touching starts
-       // | physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS // onContact called each step while touching
-       // | physx::PxPairFlag::eNOTIFY_TOUCH_LOST;    // onContact called when contact ends
 
     return physx::PxFilterFlag::eDEFAULT;
 }
@@ -71,13 +70,12 @@ void MySimulationEventCallBack::onContact(const physx::PxContactPairHeader& pair
 
     auto* a0 = pairHeader.actors[0];
     auto* a1 = pairHeader.actors[1];
-
+    //if either of the pair actors are the other player, increase the hitCounter
     if (a0 == playerActor || a1 == playerActor)
     {
         hitCounter++;
 
     }
-
 
 }
 
@@ -331,6 +329,15 @@ void PhysWOSphere::updatePoseFromPhysicsEngine(physx::PxActor* a)
 
 }
 
+void PhysWOSphere::onUpdateWO() {
+
+    float dt = ManagerSDLTime::getTimeSinceLastPhysicsIteration() / 1000.0f;
+    timeAlive += dt;
+    if (timeAlive > maxTime)
+    {
+        timeMet = true;
+    }
+}
 
 PhysPlaneWO::PhysPlaneWO(physx::PxPhysics* p, physx::PxScene* s) : IFace(this), WO() {
 
@@ -650,6 +657,49 @@ void GLViewAssignment_FinalProject::updateWorld()
             //    client->sendNetMsgSynchronousTCP(msag);
 
         }
+    }
+
+    {
+        //transverse the array looking for spheres with label launch
+        std::vector<PhysWOSphere*> spheresToRemove;
+
+        for (int i = 0; i < worldLst->size(); i++)
+        {
+            if (worldLst->at(i)->getLabel() == "Launch")
+            {
+                PhysWOSphere* sphereTemp = dynamic_cast<PhysWOSphere*>(worldLst->at(i));
+                if (sphereTemp != nullptr)
+                {
+                    //if its time has been met add it to list to remove
+                    if (sphereTemp->timeMet)
+                    {
+                        spheresToRemove.push_back(sphereTemp);
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < spheresToRemove.size(); i++)
+        {
+            PhysWOSphere* sphereTemp = spheresToRemove.at(i);
+           //remove the physics actor from the scene
+            if (sphereTemp->pActor)
+            {
+                scene->removeActor(*sphereTemp->pActor);
+                sphereTemp->pActor->release();
+            }
+
+            //remove the sphere from the world
+            //int index = worldLst->getIndexOfWO(sphereTemp);
+            //if (index != worldLst->size() - 1)
+            //{
+            worldLst->eraseViaWOptr(sphereTemp);
+            delete sphereTemp;
+
+            //}
+        }
+
+        spheresToRemove.clear();
     }
 
 }
