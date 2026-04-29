@@ -893,7 +893,26 @@ void GLViewAssignment_FinalProject::controllerMove()
         this->cam->moveRight();
 
    Vector currentPos = this->cam->getPosition();
+   //keep you tethered to the ground
    currentPos.z = currentZ;
+   //keep you inside the walls in x direction
+   if (currentPos.x <= -100)
+   {
+       currentPos.x = -99;
+   }
+   else if (currentPos.x >= 0)
+   {
+       currentPos.x = -1;
+   }
+
+   if (currentPos.y >= 50)
+   {
+       currentPos.y = 49;
+   }
+   else if (currentPos.y <= -50)
+   {
+       currentPos.y = -49;
+   }
    this->cam->setPosition(currentPos);
 
 }
