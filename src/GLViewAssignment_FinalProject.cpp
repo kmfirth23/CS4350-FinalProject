@@ -590,6 +590,23 @@ void GLViewAssignment_FinalProject::updateWorld()
     //dynamic->setGlobalPose(t);
     dynamic->setKinematicTarget(t);
 
+
+    if ((numHitsYouHaveLeft <= 0 || numHitsYourOpponentHasLeft <= 0) && !youReset)
+    {
+        resetNeeded = true;
+    }
+    if (youReset)
+    {
+        //numHitsYouHaveLeft = MaxHits;
+        numHitsYourOpponentHasLeft = MaxHits;
+
+        currentNumHits = 0;
+        callBack->hitCounter = 0;
+
+        resetNeeded = false;
+        youReset = false;
+    }
+
     //check if you've hit the other player
     currentNumHits = callBack->hitCounter;
     numHitsYourOpponentHasLeft = MaxHits - currentNumHits;
@@ -603,24 +620,6 @@ void GLViewAssignment_FinalProject::updateWorld()
         if (client)
             client->sendNetMsgSynchronousTCP(msag2);
     }
-
-
-    if ((numHitsYouHaveLeft <= 0 || numHitsYourOpponentHasLeft <= 0) && !youReset)
-    {
-        resetNeeded = true; 
-    }
-    if (youReset)
-    {
-        //numHitsYouHaveLeft = MaxHits;
-        numHitsYourOpponentHasLeft = MaxHits;
-
-        currentNumHits = 0;
-        callBack->hitCounter = 0;
-
-        resetNeeded = false;
-        youReset = false;
-    }
-    
 
 
    //send camera messages
