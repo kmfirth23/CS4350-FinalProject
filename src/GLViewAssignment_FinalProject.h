@@ -119,8 +119,10 @@ namespace Aftr
        virtual void setPosition(float x, float y, float z) override;
        virtual void setPosition(Vector pos);
 
+       //track how long the ball has been in the world
        virtual void onUpdateWO();
 
+       //variables for ball lifetime
        float timeAlive = 0.0f;
        float maxTime = 2.5f;
        bool timeMet = false;
@@ -250,8 +252,6 @@ protected:
    //playerNum = 0 (Player1) and playerNum = 1 (Player2)
    static int const playerNum = 0;
 
-
-   //int playerNum = 1;
 };
 
 /** \} */

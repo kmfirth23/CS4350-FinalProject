@@ -70,11 +70,11 @@ void MySimulationEventCallBack::onContact(const physx::PxContactPairHeader& pair
 
     auto* a0 = pairHeader.actors[0];
     auto* a1 = pairHeader.actors[1];
+
     //if either of the pair actors are the other player, increase the hitCounter
     if (a0 == playerActor || a1 == playerActor)
-    {
+    {   
         hitCounter++;
-
     }
 
 }
@@ -331,8 +331,10 @@ void PhysWOSphere::updatePoseFromPhysicsEngine(physx::PxActor* a)
 
 void PhysWOSphere::onUpdateWO() {
 
+    //record time since last call, add to total time alive
     float dt = ManagerSDLTime::getTimeSinceLastPhysicsIteration() / 1000.0f;
     timeAlive += dt;
+    //if it is longer than max time, mark for deletion
     if (timeAlive > maxTime)
     {
         timeMet = true;
@@ -456,14 +458,14 @@ void GLViewAssignment_FinalProject::onCreate()
        control = controllerList[playerNum];
    }
 
-  /* if (playerNum == 0)
+   if (playerNum == 0)
    {
        client = NetMessengerClient::New("127.0.0.1", "12684");
    }
    else
    {
        client = NetMessengerClient::New("127.0.0.1", "12683");
-   }*/
+   }
 
    {
        //add a physics actor to the camera
@@ -539,8 +541,8 @@ void GLViewAssignment_FinalProject::throwBallFunction()
     msag1.size = sizeof(msag1);
 
     ////send the infromation
-    //if (client)
-    //    client->sendNetMsgSynchronousTCP(msag1);
+    if (client)
+        client->sendNetMsgSynchronousTCP(msag1);
 
 }
 
@@ -610,8 +612,8 @@ void GLViewAssignment_FinalProject::updateWorld()
 
 
     ////send the infromation
-    //if (client)
-    //    client->sendNetMsgSynchronousTCP(msag);
+    if (client)
+        client->sendNetMsgSynchronousTCP(msag);
 
     //update physics
     unsigned int dtms = ManagerSDLTime::getTimeSinceLastPhysicsIteration();
@@ -688,15 +690,9 @@ void GLViewAssignment_FinalProject::updateWorld()
                 scene->removeActor(*sphereTemp->pActor);
                 sphereTemp->pActor->release();
             }
-
-            //remove the sphere from the world
-            //int index = worldLst->getIndexOfWO(sphereTemp);
-            //if (index != worldLst->size() - 1)
-            //{
+            //remove it from the world
             worldLst->eraseViaWOptr(sphereTemp);
             delete sphereTemp;
-
-            //}
         }
 
         spheresToRemove.clear();
@@ -784,7 +780,18 @@ void GLViewAssignment_FinalProject::updateObj(int type, float m[16]) // , float 
         }
 
         //Vector loc = Vector(m2[13], m2[14], (m2[15] - 0.5));
-        Vector loc = Vector(playerModel->getPosition().x, playerModel->getPosition().y, playerModel->getPosition().z);
+        //Vector loc = Vector(playerModel->getPosition().x, playerModel->getPosition().y, playerModel->getPosition().z);
+       
+        Vector loc1 = Vector(playerModel->getPosition().x, playerModel->getPosition().y, playerModel->getPosition().z); //z - 0.5 to reset
+        Vector look = playerModel->getLookDirection();
+        //ensure the ball does not load in inside your physics model
+        float xCor = loc1.x + look.x * 2;
+        float yCor = loc1.y + look.y * 2;
+        float zCor = loc1.z + look.z * 2;
+        zCor = zCor - 0.5;
+        Vector loc = Vector(xCor, yCor, zCor);
+        
+        
         this->thrBa = PhysWOSphere::New(ManagerEnvironmentConfiguration::getLMM() + "/models/beachBall.obj", Vector(1, 1, 1), MESH_SHADING_TYPE::mstAUTO, p, scene, loc);
         this->thrBa->setPosition(loc);
         this->thrBa->setLabel("Launch");
