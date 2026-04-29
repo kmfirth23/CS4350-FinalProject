@@ -491,32 +491,31 @@ void GLViewAssignment_FinalProject::onCreate()
    }
 
 
-   //{
-   //    //add physics for walls
+   {
+       //add physics for walls
 
-   //    physx::PxMaterial* gMaterial = p->createMaterial(0.7f, 0.5f, 0.1f);
-   //    physx::PxRigidStatic* a = physx::PxCreatePlane(*p, physx::PxPlane(0, 1, 0, -50), *gMaterial);
-   //    scene->addActor(*a);
-   //}
+       physx::PxMaterial* gMaterial = p->createMaterial(0.7f, 0.5f, 0.1f);
+       physx::PxRigidStatic* a = physx::PxCreatePlane(*p, physx::PxPlane(0, -1, 0, 50), *gMaterial);
+       scene->addActor(*a);
+   }
 
-   //{
-   //    physx::PxMaterial* gMaterial = p->createMaterial(0.7f, 0.5f, 0.1f);
-   //    physx::PxRigidStatic* a = physx::PxCreatePlane(*p, physx::PxPlane(0, 1, 0, 50), *gMaterial);
-   //    scene->addActor(*a);
-   //}
+   {
+       physx::PxMaterial* gMaterial = p->createMaterial(0.7f, 0.5f, 0.1f);
+       physx::PxRigidStatic* a = physx::PxCreatePlane(*p, physx::PxPlane(0, 1, 0, 50), *gMaterial);
+       scene->addActor(*a);
+   }
 
-   //{
-   //    physx::PxMaterial* gMaterial = p->createMaterial(0.7f, 0.5f, 0.1f);
-   //    physx::PxRigidStatic* a = physx::PxCreatePlane(*p, physx::PxPlane(1, 0, 0, -100), *gMaterial);
-   //    scene->addActor(*a);
-   //}
+   {
+       physx::PxMaterial* gMaterial = p->createMaterial(0.7f, 0.5f, 0.1f);
+       physx::PxRigidStatic* a = physx::PxCreatePlane(*p, physx::PxPlane(1, 0, 0, 100), *gMaterial);
+       scene->addActor(*a);
+   }
 
-   //{
-   //    physx::PxMaterial* gMaterial = p->createMaterial(0.7f, 0.5f, 0.1f);
-   //    physx::PxRigidStatic* a = physx::PxCreatePlane(*p, physx::PxPlane(0, 1, 0, 0), *gMaterial);
-   //    scene->addActor(*a);
-
-   //}
+   {
+       physx::PxMaterial* gMaterial = p->createMaterial(0.7f, 0.5f, 0.1f);
+       physx::PxRigidStatic* a = physx::PxCreatePlane(*p, physx::PxPlane(-1, 0, 0, 1), *gMaterial);
+       scene->addActor(*a);
+   }
 }
 
 
