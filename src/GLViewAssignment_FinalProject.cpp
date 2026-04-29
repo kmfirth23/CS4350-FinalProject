@@ -345,18 +345,19 @@ PhysPlaneWO::PhysPlaneWO(physx::PxPhysics* p, physx::PxScene* s) : IFace(this), 
 
 }
 
-PhysPlaneWO* PhysPlaneWO::New(const std::string& path, Vector scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene)
+PhysPlaneWO* PhysPlaneWO::New(const std::string& path, Vector scale, const Vector& direction, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene)
 {
     PhysPlaneWO* wo = new PhysPlaneWO(p, scene);
-    wo->onCreate(path, scale, mst, p, scene);
+    wo->onCreate(path, scale, direction, mst, p, scene);
     return wo;
 }
-void PhysPlaneWO::onCreate(const std::string& path, const Vector& scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene)
+void PhysPlaneWO::onCreate(const std::string& path, const Vector& scale, const Vector& direction, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene)
 {
     WO::onCreate(path, scale, mst);
     physx::PxMaterial* gMaterial = p->createMaterial(0.7f, 0.5f, 0.1f);
 
-    physx::PxRigidStatic* a = physx::PxCreatePlane(*p, physx::PxPlane(0, 0, 1, 0), *gMaterial);
+
+    physx::PxRigidStatic* a = physx::PxCreatePlane(*p, physx::PxPlane(direction.x, direction.y, direction.z, 0), *gMaterial);
 
     a->userData = this;
     this->pActor = a;
@@ -489,6 +490,33 @@ void GLViewAssignment_FinalProject::onCreate()
        scene->addActor(*a);
    }
 
+
+   //{
+   //    //add physics for walls
+
+   //    physx::PxMaterial* gMaterial = p->createMaterial(0.7f, 0.5f, 0.1f);
+   //    physx::PxRigidStatic* a = physx::PxCreatePlane(*p, physx::PxPlane(0, 1, 0, -50), *gMaterial);
+   //    scene->addActor(*a);
+   //}
+
+   //{
+   //    physx::PxMaterial* gMaterial = p->createMaterial(0.7f, 0.5f, 0.1f);
+   //    physx::PxRigidStatic* a = physx::PxCreatePlane(*p, physx::PxPlane(0, 1, 0, 50), *gMaterial);
+   //    scene->addActor(*a);
+   //}
+
+   //{
+   //    physx::PxMaterial* gMaterial = p->createMaterial(0.7f, 0.5f, 0.1f);
+   //    physx::PxRigidStatic* a = physx::PxCreatePlane(*p, physx::PxPlane(1, 0, 0, -100), *gMaterial);
+   //    scene->addActor(*a);
+   //}
+
+   //{
+   //    physx::PxMaterial* gMaterial = p->createMaterial(0.7f, 0.5f, 0.1f);
+   //    physx::PxRigidStatic* a = physx::PxCreatePlane(*p, physx::PxPlane(0, 1, 0, 0), *gMaterial);
+   //    scene->addActor(*a);
+
+   //}
 }
 
 
@@ -562,9 +590,9 @@ void GLViewAssignment_FinalProject::updateWorld()
    }
 
 
-   if( this->gulfstream != nullptr && this->moon != nullptr )
+  /* if( this->gulfstream != nullptr && this->moon != nullptr )
       this->moon->setPose( 
-         this->orbit_gui.compute_pose( this->gulfstream->getModel()->getPose() ) );
+         this->orbit_gui.compute_pose( this->gulfstream->getModel()->getPose() ) );*/
 
    controllerMove(); //updates location from controller inputs
    controllerPerspective(); //updates camera angle from controller inputs
@@ -959,7 +987,7 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
    Axes::isVisible = true;
    this->glRenderer->isUsingShadowMapping( true ); //set to TRUE to enable shadow mapping, must be using GL 3.2+
 
-   this->cam->setPosition( 15,15,2.875 );
+   this->cam->setPosition( -50,0,2.875 );
 
    std::string shinyRedPlasticCube( ManagerEnvironmentConfiguration::getSMM() + "/models/cube4x4x4redShinyPlastic_pp.wrl" );
    std::string wheeledCar( ManagerEnvironmentConfiguration::getSMM() + "/models/rcx_treads.wrl" );
@@ -998,7 +1026,7 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
 
    { 
       ////Create the infinite grass plane (the floor)
-      PhysPlaneWO* wo = PhysPlaneWO::New(grass, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT, p, scene);
+      PhysPlaneWO* wo = PhysPlaneWO::New(grass, Vector(1, 1, 1), Vector(0,0,1), MESH_SHADING_TYPE::mstFLAT, p, scene);
       wo->setPosition( Vector( 0, 0, 0 ) );
       wo->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
       wo->upon_async_model_loaded( [wo]()
@@ -1015,49 +1043,104 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
    }
 
    {
-      this->gulfstream = WO::New( ManagerEnvironmentConfiguration::getSMM() + "/models/Aircraft/Gulfstream3/G3.obj", Vector(1.0f, 1.0f, 1.0f ), MESH_SHADING_TYPE::mstAUTO );
-      this->gulfstream->setPosition( Vector( 0, 0, 10 ) );
-      this->gulfstream->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
-      this->gulfstream->upon_async_model_loaded( [this]()
-         {
-            ModelMeshSkin& skin = this->gulfstream->getModel()->getModelDataShared()->getModelMeshes().at( 0 )->getSkins().at( 0 );
-            skin.setAmbient( aftrColor4f( 0.1f, 0.1f, 0.1f, 1.0f ) ); //Color of object when it is not in any light
-            //skin.setDiffuse( aftrColor4f( .1f, .1f, .5f, 1.0f ) ); //Diffuse color components (ie, matte shading color of this object) // Make it blue? Why not?
-            skin.setSpecular( aftrColor4f( 0.4f, 0.4f, 0.4f, 1.0f ) ); //Specular color component (ie, how "shiney" it is)
-            skin.setSpecularCoefficient( 10 ); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
-         } );
-      gulfstream->setLabel( "Gulfstream GIII" );
-      worldLst->push_back( this->gulfstream );
+       std::string wall1(ManagerEnvironmentConfiguration::getLMM() + "/models/brickWall1.obj");
+       WO* wo = WO::New(wall1, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
+       wo->setPosition(Vector(0, 0, 25));
+       wo->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
+       wo->upon_async_model_loaded([wo]()
+           {
+               ModelMeshSkin& grassSkin = wo->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
+               grassSkin.getMultiTextureSet().at(0).setTexRepeats(5.0f);
+               grassSkin.setAmbient(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Color of object when it is not in any light
+               grassSkin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f)); //Diffuse color components (ie, matte shading color of this object)
+               grassSkin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
+               grassSkin.setSpecularCoefficient(10); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
+           });
+       wo->setLabel("Wall1");
+       worldLst->push_back(wo);
    }
 
+   {
+       std::string wall1(ManagerEnvironmentConfiguration::getLMM() + "/models/brickWall1.obj");
+       WO* wo = WO::New(wall1, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
+       wo->setPosition(Vector(-50, 50, 25));
+       wo->rotateAboutGlobalZ(1.5708);
+       wo->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
+       wo->upon_async_model_loaded([wo]()
+           {
+               ModelMeshSkin& grassSkin = wo->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
+               grassSkin.getMultiTextureSet().at(0).setTexRepeats(5.0f);
+               grassSkin.setAmbient(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Color of object when it is not in any light
+               grassSkin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f)); //Diffuse color components (ie, matte shading color of this object)
+               grassSkin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
+               grassSkin.setSpecularCoefficient(10); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
+           });
+       wo->setLabel("Wall2");
+       worldLst->push_back(wo);
+   }
+
+   {
+       std::string wall1(ManagerEnvironmentConfiguration::getLMM() + "/models/brickWall1.obj");
+       WO* wo = WO::New(wall1, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
+       wo->setPosition(Vector(-50, -50, 25));
+       wo->rotateAboutGlobalZ(1.5708);
+       wo->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
+       wo->upon_async_model_loaded([wo]()
+           {
+               ModelMeshSkin& grassSkin = wo->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
+               grassSkin.getMultiTextureSet().at(0).setTexRepeats(5.0f);
+               grassSkin.setAmbient(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Color of object when it is not in any light
+               grassSkin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f)); //Diffuse color components (ie, matte shading color of this object)
+               grassSkin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
+               grassSkin.setSpecularCoefficient(10); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
+           });
+       wo->setLabel("Wall3");
+       worldLst->push_back(wo);
+   }
+
+   {
+       std::string wall1(ManagerEnvironmentConfiguration::getLMM() + "/models/brickWall1.obj");
+       WO* wo = WO::New(wall1, Vector(1, 1, 1), MESH_SHADING_TYPE::mstFLAT);
+       wo->setPosition(Vector(-100, 0, 25));
+       wo->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
+       wo->upon_async_model_loaded([wo]()
+           {
+               ModelMeshSkin& grassSkin = wo->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
+               grassSkin.getMultiTextureSet().at(0).setTexRepeats(5.0f);
+               grassSkin.setAmbient(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Color of object when it is not in any light
+               grassSkin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f)); //Diffuse color components (ie, matte shading color of this object)
+               grassSkin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
+               grassSkin.setSpecularCoefficient(10); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
+           });
+       wo->setLabel("Wall4");
+       worldLst->push_back(wo);
+   }
+
+
+
    //{
-   //    this->playerModel = WO::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO);
-   //    this->playerModel->setPosition(Vector(0, 40, 2));
-   //    this->playerModel->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
-   //    this->playerModel->upon_async_model_loaded([this]()
-   //        {
-   //            ModelMeshSkin& skin = this->playerModel->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
-   //            //gray character model
-   //            //skin.setAmbient(aftrColor4f(0.25f, 0.25f, 0.25f, 1.0f));
-   //            skin.setAmbient(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));
-   //            //skin.setDiffuse(aftrColor4f(0.85f, 0.85f, 0.85f, 1.0f));
-   //            skin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));
-   //            skin.setSpecular(aftrColor4f(0.2f, 0.2f, 0.2f, 1.0f));
-   //            skin.setSpecularCoefficient(10);
-   //            //skin.setAmbient(aftrColor4f(0.4f, 0.2f, 0.95f, 1.0f)); //Color of object when it is not in any light
-   //            //skin.setDiffuse(aftrColor4f(.1f, .1f, .5f, 1.0f)); //Diffuse color components (ie, matte shading color of this object) // Make it blue? Why not?
-   //            //skin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
-   //            //skin.setSpecularCoefficient(1000); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
-   //        });
-   //    this->playerModel->setLabel("Player1");
-   //    worldLst->push_back(this->playerModel);
-   // }
+   //   this->gulfstream = WO::New( ManagerEnvironmentConfiguration::getSMM() + "/models/Aircraft/Gulfstream3/G3.obj", Vector(1.0f, 1.0f, 1.0f ), MESH_SHADING_TYPE::mstAUTO );
+   //   this->gulfstream->setPosition( Vector( 0, 0, 10 ) );
+   //   this->gulfstream->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
+   //   this->gulfstream->upon_async_model_loaded( [this]()
+   //      {
+   //         ModelMeshSkin& skin = this->gulfstream->getModel()->getModelDataShared()->getModelMeshes().at( 0 )->getSkins().at( 0 );
+   //         skin.setAmbient( aftrColor4f( 0.1f, 0.1f, 0.1f, 1.0f ) ); //Color of object when it is not in any light
+   //         //skin.setDiffuse( aftrColor4f( .1f, .1f, .5f, 1.0f ) ); //Diffuse color components (ie, matte shading color of this object) // Make it blue? Why not?
+   //         skin.setSpecular( aftrColor4f( 0.4f, 0.4f, 0.4f, 1.0f ) ); //Specular color component (ie, how "shiney" it is)
+   //         skin.setSpecularCoefficient( 10 ); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
+   //      } );
+   //   gulfstream->setLabel( "Gulfstream GIII" );
+   //   worldLst->push_back( this->gulfstream );
+   //}
+
+
    {
        //if player 2, load player1 model (grey)
        if (playerNum == 1)
        {
            this->playerModel = PhysWOPlayer::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO, p, scene, Vector(0, 40, 2.875));
-           this->playerModel->setPosition(Vector(0, 40, 1.4375));
+           this->playerModel->setPosition(Vector(-50, 10, 1.4375));
 
            this->playerModel->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
 
@@ -1074,10 +1157,6 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
                    skin.setSpecular(aftrColor4f(0.2f, 0.2f, 0.2f, 1.0f));
                    skin.setSpecularCoefficient(10);
 
-                   //skin.setAmbient(aftrColor4f(0.4f, 0.2f, 0.95f, 1.0f)); //Color of object when it is not in any light
-                   //skin.setDiffuse(aftrColor4f(.1f, .1f, .5f, 1.0f)); //Diffuse color components (ie, matte shading color of this object) // Make it blue? Why not?
-                   //skin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
-                   //skin.setSpecularCoefficient(1000); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
                });
 
 
@@ -1090,7 +1169,7 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
        else
        {
            this->playerModel = PhysWOPlayer::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO, p, scene, Vector(0, 50, 2.875));
-           this->playerModel->setPosition(Vector(0, 50, 1.435));
+           this->playerModel->setPosition(Vector(-50, -10, 1.435));
 
            this->playerModel->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
 
@@ -1134,10 +1213,6 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
                skin.setSpecular(aftrColor4f(0.2f, 0.2f, 0.2f, 1.0f));
                skin.setSpecularCoefficient(10);
 
-               //skin.setAmbient(aftrColor4f(0.4f, 0.2f, 0.95f, 1.0f)); //Color of object when it is not in any light
-               //skin.setDiffuse(aftrColor4f(.1f, .1f, .5f, 1.0f)); //Diffuse color components (ie, matte shading color of this object) // Make it blue? Why not?
-               //skin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
-               //skin.setSpecularCoefficient(1000); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
            });
 
 
@@ -1145,31 +1220,31 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
        worldLst->push_back(this->ball);
    }
 
-   {
-      //Make a sphere
-      this->moon = WO::New();
-      MGLIndexedGeometry* mglSphere = MGLIndexedGeometry::New( this->moon );
-      IndexedGeometrySphereTriStrip* geoSphere = IndexedGeometrySphereTriStrip::New( 3.0f, 12, 12, true, true );
-      mglSphere->setIndexedGeometry( geoSphere );
-      this->moon->setModel( mglSphere );
-      this->moon->setLabel( "Moon" );
-      this->moon->setPosition( { 15,15,15 } );
-      this->moon->renderOrderType = RENDER_ORDER_TYPE::roTRANSPARENT;
-      this->worldLst->push_back( this->moon );
+   //{
+   //   //Make a sphere
+   //   this->moon = WO::New();
+   //   MGLIndexedGeometry* mglSphere = MGLIndexedGeometry::New( this->moon );
+   //   IndexedGeometrySphereTriStrip* geoSphere = IndexedGeometrySphereTriStrip::New( 3.0f, 12, 12, true, true );
+   //   mglSphere->setIndexedGeometry( geoSphere );
+   //   this->moon->setModel( mglSphere );
+   //   this->moon->setLabel( "Moon" );
+   //   this->moon->setPosition( { 15,15,15 } );
+   //   this->moon->renderOrderType = RENDER_ORDER_TYPE::roTRANSPARENT;
+   //   this->worldLst->push_back( this->moon );
 
-      //Place a texture on the sphere, now its a moon
-      fmt::print( "To the moon...\n" );
-      Tex tex = *ManagerTex::loadTexAsync( ManagerEnvironmentConfiguration::getSMM() + "/images/moonMap.jpg" );
-      this->moon->getModel()->getSkin().getMultiTextureSet().at( 0 ) = tex;
-      this->moon->setPosition( {15,2,10});
+   //   //Place a texture on the sphere, now its a moon
+   //   fmt::print( "To the moon...\n" );
+   //   Tex tex = *ManagerTex::loadTexAsync( ManagerEnvironmentConfiguration::getSMM() + "/images/moonMap.jpg" );
+   //   this->moon->getModel()->getSkin().getMultiTextureSet().at( 0 ) = tex;
+   //   this->moon->setPosition( {15,2,10});
 
-      //We always want some axes, too!
-      WO* axes = WOAxesTubes::New( { 15.0f,15.0f,15.0f }, .2f );
-      axes->setParentWorldObject( this->moon );
-      axes->setPosition( this->moon->getPosition() ); //match parent position before locking
-      axes->lockWRTparent(); //makes a joint that "welds" this child rigidly to parent
-      this->moon->getChildren().push_back( axes );     
-   }
+   //   //We always want some axes, too!
+   //   WO* axes = WOAxesTubes::New( { 15.0f,15.0f,15.0f }, .2f );
+   //   axes->setParentWorldObject( this->moon );
+   //   axes->setPosition( this->moon->getPosition() ); //match parent position before locking
+   //   axes->lockWRTparent(); //makes a joint that "welds" this child rigidly to parent
+   //   this->moon->getChildren().push_back( axes );     
+   //}
    
    // Let's make a GUI. We create a WOImGui instance, and then use the strategy pattern to
    // submit/subscribe lambdas/std::functions/callbacks (~same thing) to draw our desired widgets.
@@ -1227,7 +1302,7 @@ void GLViewAssignment_FinalProject::createAssignment_FinalProjectWayPoints()
    params.frequency = 5000;
    params.useCamera = true;
    params.visible = true;
-   WOWayPointSpherical* wayPt = WOWayPointSpherical::New( params, 3 );
-   wayPt->setPosition( Vector( 50, 0, 3 ) );
-   worldLst->push_back( wayPt );
+   //WOWayPointSpherical* wayPt = WOWayPointSpherical::New( params, 3 );
+  // wayPt->setPosition( Vector( 50, 0, 3 ) );
+  // worldLst->push_back( wayPt );
 }

@@ -142,9 +142,9 @@ namespace Aftr
 
        //static PhysWO* New(const std::string& modelFileName);
 
-       static PhysPlaneWO* New(const std::string& path, Vector scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene);
+       static PhysPlaneWO* New(const std::string& path, Vector scale, const Vector& direction, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene);
 
-       void onCreate(const std::string& path, const Vector& scale, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene);
+       void onCreate(const std::string& path, const Vector& scale, const Vector& direction, MESH_SHADING_TYPE mst, physx::PxPhysics* p, physx::PxScene* scene);
 
        //void updatePoseFromPhysicsEngine(physx::PxActor* a);
 
@@ -258,7 +258,7 @@ protected:
    bool youReset = false;
 
    //playerNum = 0 (Player1) and playerNum = 1 (Player2)
-   static int const playerNum = 1;
+   static int const playerNum = 0;
 
 
 };
