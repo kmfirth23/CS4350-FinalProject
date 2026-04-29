@@ -117,7 +117,7 @@ void NetMsgControlObjects::onMessageArrived()
 {
     //update cube position and rotation
     GLViewAssignment_FinalProject* glv = ManagerGLView::getGLViewT<GLViewAssignment_FinalProject>();
-    glv->updateObj(messType, m);
+    glv->updateObj(messType, m, ID);
 
 
 }
@@ -556,7 +556,7 @@ void GLViewAssignment_FinalProject::updateWorld()
    //but for the sake of a minimial example, we'll do something mildly interesting here
 
 
-   if (throwBall)
+   if (throwBall && !resetNeeded)
    {
        throwBallFunction();
    }
@@ -590,8 +590,38 @@ void GLViewAssignment_FinalProject::updateWorld()
     //dynamic->setGlobalPose(t);
     dynamic->setKinematicTarget(t);
 
-  
+    //check if you've hit the other player
     currentNumHits = callBack->hitCounter;
+    numHitsYourOpponentHasLeft = MaxHits - currentNumHits;
+
+    {
+        NetMsgControlObjects msag2;
+        msag2.ID = numHitsYourOpponentHasLeft; 
+        msag2.messType = 2;
+
+        msag2.size = sizeof(msag2);
+        if (client)
+            client->sendNetMsgSynchronousTCP(msag2);
+    }
+
+
+    if ((numHitsYouHaveLeft <= 0 || numHitsYourOpponentHasLeft <= 0) && !youReset)
+    {
+        resetNeeded = true; 
+    }
+    if (youReset)
+    {
+        //numHitsYouHaveLeft = MaxHits;
+        numHitsYourOpponentHasLeft = MaxHits;
+
+        currentNumHits = 0;
+        callBack->hitCounter = 0;
+
+        resetNeeded = false;
+        youReset = false;
+    }
+    
+
 
    //send camera messages
    NetMsgControlObjects msag;
@@ -637,26 +667,6 @@ void GLViewAssignment_FinalProject::updateWorld()
             PhysWOSphere* wo = static_cast<PhysWOSphere*>(actor->userData);
             if(wo)
                 wo->updatePoseFromPhysicsEngine(actor);
-
-            //send the message
-            PhysWOSphere* wo2 = static_cast<PhysWOSphere*>(actor->userData);
-            //NetMsgControlObjects msag;
-
-            ////set ID
-            //msag.ID = wo2->getID();
-
-            //Mat4 m2 = wo2->getPose();
-
-            //for (int i = 0; i < 16; i++)
-            //{
-            //    msag.m[i] = m2[i];
-            //}
-
-            //msag.size = sizeof(msag);
-
-            ////send the infromation
-            //if (client)
-            //    client->sendNetMsgSynchronousTCP(msag);
 
         }
     }
@@ -744,23 +754,8 @@ void GLViewAssignment_FinalProject::onKeyUp( const SDL_KeyboardEvent& key )
 }
 
 
-void GLViewAssignment_FinalProject::updateObj(int type, float m[16]) // , float xl, float yl, float zl)
+void GLViewAssignment_FinalProject::updateObj(int type, float m[16], int ID) // , float xl, float yl, float zl)
 {
-    //transverse the worldLst to find the corresponding object ID
-    /*for (int i = 0; i < worldLst->size(); i++)
-    {
-        if (id == worldLst->at(i)->getID())
-        {
-            Mat4 m2;
-            for (int i = 0; i < 16; i++)
-            {
-                m2[i] = m[i];
-            }
-
-
-            worldLst->at(i)->setPose(m2);
-        }
-    }*/
 
     if (type == 0)
     {
@@ -811,6 +806,10 @@ void GLViewAssignment_FinalProject::updateObj(int type, float m[16]) // , float 
         dynamicBody->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, false);
         dynamicBody->addForce(physx::PxVec3(playerModel->getLookDirection().x * 30, playerModel->getLookDirection().y * 30, playerModel->getLookDirection().z * 30), physx::PxForceMode::eIMPULSE, true);
 
+    }
+    else if (type == 2)
+    {
+        numHitsYouHaveLeft = ID;
     }
 }
 
@@ -1197,13 +1196,20 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
       this->gui->subscribe_drawImGuiWidget(
          [=,this]() //this is a lambda, the capture clause is in [], the input argument list is in (), and the body is in {}
          {
-              ImGui::Begin("Throw");
+              ImGui::Begin("Dodgeball Game");
+             
+              ImGui::Text("# hits your opponent has left: %d", numHitsYourOpponentHasLeft);
+              ImGui::Text("# hits you have left : % d", numHitsYouHaveLeft);
+
+              if (ImGui::Button("Reset"))
+              {
+                  youReset = true; 
+              }
+
               if (ImGui::Button("Throw Ball"))
               {
                   throwBall = true;
               }
-
-              ImGui::Text("Hits: %d", currentNumHits);
 
               ImGui::End();                                                                                                             
               

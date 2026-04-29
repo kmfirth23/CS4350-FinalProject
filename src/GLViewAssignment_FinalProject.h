@@ -124,7 +124,7 @@ namespace Aftr
 
        //variables for ball lifetime
        float timeAlive = 0.0f;
-       float maxTime = 2.5f;
+       float maxTime = 3.5f;
        bool timeMet = false;
 
    protected:
@@ -205,7 +205,7 @@ public:
    /// </summary>
    /// <param name="id"></param> message type
    /// <param name="m"></param> pose 
-   virtual void updateObj(int type, float m[16]);
+   virtual void updateObj(int type, float m[16], int ID);
 
    std::shared_ptr<NetMessengerClient> client = nullptr;
 
@@ -249,8 +249,17 @@ protected:
    MySimulationEventCallBack* callBack = nullptr;
    int currentNumHits = 0;
 
+   static int const MaxHits = 5;
+
+   int numHitsYouHaveLeft = 5; 
+   int numHitsYourOpponentHasLeft = 5;
+
+   bool resetNeeded = false;
+   bool youReset = false;
+
    //playerNum = 0 (Player1) and playerNum = 1 (Player2)
    static int const playerNum = 0;
+
 
 };
 
