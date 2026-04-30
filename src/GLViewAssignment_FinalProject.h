@@ -269,7 +269,7 @@ protected:
    bool topLeftReleased = true;
 
    //playerNum = 0 (Player1) and playerNum = 1 (Player2)
-   static int const playerNum = 1;
+   static int const playerNum = 0;
 
 
 };
