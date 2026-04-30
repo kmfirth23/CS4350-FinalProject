@@ -454,18 +454,20 @@ void GLViewAssignment_FinalProject::onCreate()
    }
 
    //based on which player it is set the controller
-   if (playerNum < controllerList.size())
-   {
-       control = controllerList[playerNum];
-   }
+   //if (playerNum < controllerList.size())
+   //{
+    control = controllerList[0];
+   //}
 
    if (playerNum == 0)
    {
-       client = NetMessengerClient::New("127.0.0.1", "12684");
+       //c ip
+       client = NetMessengerClient::New("100.110.135.215", "12684");
    }
    else
    {
-       client = NetMessengerClient::New("127.0.0.1", "12683");
+       //k ip
+       client = NetMessengerClient::New("100.110.135.226", "12683");
    }
 
    {

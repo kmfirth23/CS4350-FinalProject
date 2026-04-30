@@ -258,7 +258,7 @@ protected:
    bool youReset = false;
 
    //playerNum = 0 (Player1) and playerNum = 1 (Player2)
-   static int const playerNum = 0;
+   static int const playerNum = 1;
 
 
 };
