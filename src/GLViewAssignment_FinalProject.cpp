@@ -454,20 +454,22 @@ void GLViewAssignment_FinalProject::onCreate()
    }
 
    //based on which player it is set the controller
-   //if (playerNum < controllerList.size())
-   //{
-    control = controllerList[0];
-   //}
+   if (playerNum < controllerList.size())
+   {
+        control = controllerList[playerNum];
+   }
 
    if (playerNum == 0)
    {
        //c ip
-       client = NetMessengerClient::New("100.110.135.215", "12684");
+       client = NetMessengerClient::New("127.0.0.1", "12684");
+       //client = NetMessengerClient::New("100.110.135.215", "12684");
    }
    else
    {
        //k ip
-       client = NetMessengerClient::New("100.110.135.226", "12683");
+       client = NetMessengerClient::New("127.0.0.1", "12683");
+       //client = NetMessengerClient::New("100.110.135.226", "12683");
    }
 
    {
@@ -532,10 +534,10 @@ void GLViewAssignment_FinalProject::throwBallFunction()
     Vector loc1 = Vector(cam->getPosition().x, cam->getPosition().y, cam->getPosition().z); //z - 0.5 to reset
     Vector look = cam->getLookDirection();
     //ensure the ball does not load in inside your physics model
-    float xCor = loc1.x + look.x *2;
-    float yCor = loc1.y + look.y *2;
-    float zCor = loc1.z + look.z *2;
-    zCor = zCor - 0.5;
+    float xCor = loc1.x + look.x *1.75;
+    float yCor = loc1.y + look.y *1.75;
+    float zCor = loc1.z + look.z *1.75;
+    zCor = zCor - 0.42;
     Vector loc = Vector(xCor, yCor, zCor);
 
     this->thrBa = PhysWOSphere::New(ManagerEnvironmentConfiguration::getLMM() + "/models/beachBall.obj", Vector(1, 1, 1), MESH_SHADING_TYPE::mstAUTO, p, scene, loc);
@@ -808,10 +810,10 @@ void GLViewAssignment_FinalProject::updateObj(int type, float m[16], int ID) // 
         Vector loc1 = Vector(playerModel->getPosition().x, playerModel->getPosition().y, playerModel->getPosition().z); //z - 0.5 to reset
         Vector look = playerModel->getLookDirection();
         //ensure the ball does not load in inside your physics model
-        float xCor = loc1.x + look.x * 2;
-        float yCor = loc1.y + look.y * 2;
-        float zCor = loc1.z + look.z * 2;
-        zCor = zCor - 0.5;
+        float xCor = loc1.x + look.x * 1.75;
+        float yCor = loc1.y + look.y * 1.75;
+        float zCor = loc1.z + look.z * 1.75;
+        zCor = zCor - 0.42;
         Vector loc = Vector(xCor, yCor, zCor);
         
         
@@ -985,12 +987,6 @@ void GLViewAssignment_FinalProject::controllerButtons()
         isReleased = true;
     }
 
-
-    /*if (SDL_GameControllerGetButton(control, SDL_CONTROLLER_BUTTON_A) != 0)
-    {
-        throwBall = true;
-    }*/
-
 }
 
 
@@ -1071,8 +1067,8 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
            {
                ModelMeshSkin& grassSkin = wo->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
                grassSkin.getMultiTextureSet().at(0).setTexRepeats(5.0f);
-               grassSkin.setAmbient(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Color of object when it is not in any light
-               grassSkin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f)); //Diffuse color components (ie, matte shading color of this object)
+               grassSkin.setAmbient(aftrColor4f(0.6f, 0.5f, 0.4f, 1.0f)); //Color of object when it is not in any light
+               grassSkin.setDiffuse(aftrColor4f(0.7f, 0.48f, 0.42f, 1.0f)); //Diffuse color components (ie, matte shading color of this object)
                grassSkin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
                grassSkin.setSpecularCoefficient(10); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
            });
@@ -1090,8 +1086,8 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
            {
                ModelMeshSkin& grassSkin = wo->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
                grassSkin.getMultiTextureSet().at(0).setTexRepeats(5.0f);
-               grassSkin.setAmbient(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Color of object when it is not in any light
-               grassSkin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f)); //Diffuse color components (ie, matte shading color of this object)
+               grassSkin.setAmbient(aftrColor4f(0.6f, 0.5f, 0.4f, 1.0f)); //Color of object when it is not in any light
+               grassSkin.setDiffuse(aftrColor4f(0.7f, 0.48f, 0.42f, 1.0f)); //Diffuse color components (ie, matte shading color of this object)
                grassSkin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
                grassSkin.setSpecularCoefficient(10); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
            });
@@ -1109,8 +1105,8 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
            {
                ModelMeshSkin& grassSkin = wo->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
                grassSkin.getMultiTextureSet().at(0).setTexRepeats(5.0f);
-               grassSkin.setAmbient(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Color of object when it is not in any light
-               grassSkin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f)); //Diffuse color components (ie, matte shading color of this object)
+               grassSkin.setAmbient(aftrColor4f(0.6f, 0.5f, 0.4f, 1.0f)); //Color of object when it is not in any light
+               grassSkin.setDiffuse(aftrColor4f(0.7f, 0.48f, 0.42f, 1.0f)); //Diffuse color components (ie, matte shading color of this object)
                grassSkin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
                grassSkin.setSpecularCoefficient(10); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
            });
@@ -1127,46 +1123,27 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
            {
                ModelMeshSkin& grassSkin = wo->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
                grassSkin.getMultiTextureSet().at(0).setTexRepeats(5.0f);
-               grassSkin.setAmbient(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Color of object when it is not in any light
-               grassSkin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f)); //Diffuse color components (ie, matte shading color of this object)
-               grassSkin.setSpecular(aftrColor4f(0.4f, 0.4f, 0.4f, 1.0f)); //Specular color component (ie, how "shiney" it is)
+               grassSkin.setAmbient(aftrColor4f(0.6f, 0.5f, 0.4f, 1.0f)); //Color of object when it is not in any light
+               grassSkin.setDiffuse(aftrColor4f(0.7f, 0.48f, 0.42f, 1.0f)); //Diffuse color components (ie, matte shading color of this object)
+               grassSkin.setSpecular(aftrColor4f(0.3f, 0.3f, 0.3f, 1.0f)); //Specular color component (ie, how "shiney" it is)
                grassSkin.setSpecularCoefficient(10); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
            });
        wo->setLabel("Wall4");
        worldLst->push_back(wo);
    }
 
-
-
-   //{
-   //   this->gulfstream = WO::New( ManagerEnvironmentConfiguration::getSMM() + "/models/Aircraft/Gulfstream3/G3.obj", Vector(1.0f, 1.0f, 1.0f ), MESH_SHADING_TYPE::mstAUTO );
-   //   this->gulfstream->setPosition( Vector( 0, 0, 10 ) );
-   //   this->gulfstream->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
-   //   this->gulfstream->upon_async_model_loaded( [this]()
-   //      {
-   //         ModelMeshSkin& skin = this->gulfstream->getModel()->getModelDataShared()->getModelMeshes().at( 0 )->getSkins().at( 0 );
-   //         skin.setAmbient( aftrColor4f( 0.1f, 0.1f, 0.1f, 1.0f ) ); //Color of object when it is not in any light
-   //         //skin.setDiffuse( aftrColor4f( .1f, .1f, .5f, 1.0f ) ); //Diffuse color components (ie, matte shading color of this object) // Make it blue? Why not?
-   //         skin.setSpecular( aftrColor4f( 0.4f, 0.4f, 0.4f, 1.0f ) ); //Specular color component (ie, how "shiney" it is)
-   //         skin.setSpecularCoefficient( 10 ); // How "sharp" are the specular highlights (bigger is sharper, 1000 is very sharp, 10 is very dull)
-   //      } );
-   //   gulfstream->setLabel( "Gulfstream GIII" );
-   //   worldLst->push_back( this->gulfstream );
-   //}
-
-
    {
        //if player 2, load player1 model (grey)
        if (playerNum == 1)
        {
-           this->playerModel = PhysWOPlayer::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO, p, scene, Vector(0, 40, 2.875));
+           this->playerModel = PhysWOPlayer::New(ManagerEnvironmentConfiguration::getLMM() + "/models/playerWithMore.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO, p, scene, Vector(0, 40, 2.875));
            this->playerModel->setPosition(Vector(-50, 10, 1.4375));
-
+           //this->playerModel->rotateAboutGlobalX(1.5708);
            this->playerModel->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
 
            this->playerModel->upon_async_model_loaded([this]()
                {
-                   ModelMeshSkin& skin = this->playerModel->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
+                   ModelMeshSkin& skin = this->playerModel->getModel()->getModelDataShared()->getModelMeshes().at(2)->getSkins().at(0);
 
                    //gray character model
 
@@ -1176,6 +1153,14 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
                    skin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));
                    skin.setSpecular(aftrColor4f(0.2f, 0.2f, 0.2f, 1.0f));
                    skin.setSpecularCoefficient(10);
+
+                   ModelMeshSkin& skin1 = this->playerModel->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
+
+                   //ring on model
+                   skin1.setAmbient(aftrColor4f(0.1f, 0.1f, 0.40f, 1.0f));
+                   skin1.setDiffuse(aftrColor4f(0.2f, 0.4f, 1.0f, 1.0f));
+                   skin1.setSpecular(aftrColor4f(0.2f, 0.2f, 0.2f, 1.0f));
+                   skin1.setSpecularCoefficient(10);
 
                });
 
@@ -1188,23 +1173,30 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
        //if player 1, load player2 model (yellow)
        else
        {
-           this->playerModel = PhysWOPlayer::New(ManagerEnvironmentConfiguration::getLMM() + "/models/metalPlayer1.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO, p, scene, Vector(0, 50, 2.875));
+           this->playerModel = PhysWOPlayer::New(ManagerEnvironmentConfiguration::getLMM() + "/models/playerWithMore.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO, p, scene, Vector(0, 50, 2.875));
            this->playerModel->setPosition(Vector(-50, -10, 1.435));
-
+           //this->playerModel->rotateAboutGlobalZ(1.5708);
            this->playerModel->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
 
            this->playerModel->upon_async_model_loaded([this]()
                {
-                   ModelMeshSkin& skin = this->playerModel->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
+                   ModelMeshSkin& skin = this->playerModel->getModel()->getModelDataShared()->getModelMeshes().at(2)->getSkins().at(0);
 
                    //yellow character model
-                   skin.setAmbient(aftrColor4f(0.60f, 0.60f, 0.0f, 1.0f));
-                   skin.setDiffuse(aftrColor4f(1.0f, 1.0f, 0.0f, 1.0f));
+                   skin.setAmbient(aftrColor4f(0.60f, 0.60f, 0.00f, 1.0f));
+                   skin.setDiffuse(aftrColor4f(1.0f, 1.0f, 0.6f, 1.0f));
                    skin.setSpecular(aftrColor4f(0.2f, 0.2f, 0.2f, 1.0f));
                    skin.setSpecularCoefficient(10);
 
-               });
+                   ModelMeshSkin& skin1 = this->playerModel->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
 
+                   //ring on model
+                   skin1.setAmbient(aftrColor4f(0.40f, 0.0f, 0.40f, 1.0f));
+                   skin1.setDiffuse(aftrColor4f(0.0f, 0.0f, 1.0f, 1.0f));
+                   skin1.setSpecular(aftrColor4f(0.2f, 0.2f, 0.2f, 1.0f));
+                   skin1.setSpecularCoefficient(10);
+
+               });
 
            this->playerModel->setLabel("Player2");
            worldLst->push_back(this->playerModel);
@@ -1213,58 +1205,6 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
        
 
    }
-
-   {
-       this->ball = WO::New(ManagerEnvironmentConfiguration::getLMM() + "/models/beachBall.obj", Vector(1.0f, 1.0f, 1.0f), MESH_SHADING_TYPE::mstAUTO);
-       this->ball->setPosition(Vector(0, 0, 0.5));
-
-       this->ball->renderOrderType = RENDER_ORDER_TYPE::roOPAQUE;
-
-       this->ball->upon_async_model_loaded([this]()
-           {
-               ModelMeshSkin& skin = this->ball->getModel()->getModelDataShared()->getModelMeshes().at(0)->getSkins().at(0);
-
-               //gray character model
-
-               //skin.setAmbient(aftrColor4f(0.25f, 0.25f, 0.25f, 1.0f));
-               skin.setAmbient(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));
-               //skin.setDiffuse(aftrColor4f(0.85f, 0.85f, 0.85f, 1.0f));
-               skin.setDiffuse(aftrColor4f(1.0f, 1.0f, 1.0f, 1.0f));
-               skin.setSpecular(aftrColor4f(0.2f, 0.2f, 0.2f, 1.0f));
-               skin.setSpecularCoefficient(10);
-
-           });
-
-
-       this->playerModel->setLabel("Ball");
-       worldLst->push_back(this->ball);
-   }
-
-   //{
-   //   //Make a sphere
-   //   this->moon = WO::New();
-   //   MGLIndexedGeometry* mglSphere = MGLIndexedGeometry::New( this->moon );
-   //   IndexedGeometrySphereTriStrip* geoSphere = IndexedGeometrySphereTriStrip::New( 3.0f, 12, 12, true, true );
-   //   mglSphere->setIndexedGeometry( geoSphere );
-   //   this->moon->setModel( mglSphere );
-   //   this->moon->setLabel( "Moon" );
-   //   this->moon->setPosition( { 15,15,15 } );
-   //   this->moon->renderOrderType = RENDER_ORDER_TYPE::roTRANSPARENT;
-   //   this->worldLst->push_back( this->moon );
-
-   //   //Place a texture on the sphere, now its a moon
-   //   fmt::print( "To the moon...\n" );
-   //   Tex tex = *ManagerTex::loadTexAsync( ManagerEnvironmentConfiguration::getSMM() + "/images/moonMap.jpg" );
-   //   this->moon->getModel()->getSkin().getMultiTextureSet().at( 0 ) = tex;
-   //   this->moon->setPosition( {15,2,10});
-
-   //   //We always want some axes, too!
-   //   WO* axes = WOAxesTubes::New( { 15.0f,15.0f,15.0f }, .2f );
-   //   axes->setParentWorldObject( this->moon );
-   //   axes->setPosition( this->moon->getPosition() ); //match parent position before locking
-   //   axes->lockWRTparent(); //makes a joint that "welds" this child rigidly to parent
-   //   this->moon->getChildren().push_back( axes );     
-   //}
    
    // Let's make a GUI. We create a WOImGui instance, and then use the strategy pattern to
    // submit/subscribe lambdas/std::functions/callbacks (~same thing) to draw our desired widgets.
