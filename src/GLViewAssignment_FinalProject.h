@@ -54,6 +54,7 @@ namespace Aftr
        unsigned int ID;
        float m[16];
        unsigned int messType;
+       int force;
 
    protected:
    };
@@ -205,7 +206,7 @@ public:
    /// </summary>
    /// <param name="id"></param> message type
    /// <param name="m"></param> pose 
-   virtual void updateObj(int type, float m[16], int ID);
+   virtual void updateObj(int type, float m[16], int ID, int force);
 
    std::shared_ptr<NetMessengerClient> client = nullptr;
 
@@ -256,6 +257,16 @@ protected:
 
    bool resetNeeded = false;
    bool youReset = false;
+
+   int MaxForce = 80; 
+   int MinForce = 10;
+   int yourForce = 30;
+
+   bool topRightPressed = false;
+   bool topRightReleased = true;
+
+   bool topLeftPressed = false;
+   bool topLeftReleased = true;
 
    //playerNum = 0 (Player1) and playerNum = 1 (Player2)
    static int const playerNum = 1;

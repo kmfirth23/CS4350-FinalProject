@@ -90,6 +90,7 @@ NetMsgControlObjects::NetMsgControlObjects()
         m[i] = 0.0;
 
     ID = -1;
+    force = 30;
 
     messType = 0;
 }
@@ -99,6 +100,7 @@ bool NetMsgControlObjects::toStream(NetMessengerStreamBuffer& os) const {
     os << this->size;
     os << ID;
     os << messType;
+    os << force;
     for (int i = 0; i < 16; i++)
         os << m[i];
     return true;
@@ -108,6 +110,7 @@ bool NetMsgControlObjects::fromStream(NetMessengerStreamBuffer& is)
     is >> this->size;
     is >> ID;
     is >> messType;
+    is >> force;
     for (int i = 0; i < 16; i++)
         is >> m[i];
     return true;
@@ -117,7 +120,7 @@ void NetMsgControlObjects::onMessageArrived()
 {
     //update cube position and rotation
     GLViewAssignment_FinalProject* glv = ManagerGLView::getGLViewT<GLViewAssignment_FinalProject>();
-    glv->updateObj(messType, m, ID);
+    glv->updateObj(messType, m, ID, force);
 
 
 }
@@ -556,12 +559,13 @@ void GLViewAssignment_FinalProject::throwBallFunction()
     // Make sure it responds to physics
     dynamicBody->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, false);
     dynamicBody->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, false);
-    dynamicBody->addForce(physx::PxVec3(cam->getLookDirection().x * 30, cam->getLookDirection().y * 30, cam->getLookDirection().z * 30), physx::PxForceMode::eIMPULSE, true);
+    dynamicBody->addForce(physx::PxVec3(cam->getLookDirection().x * yourForce, cam->getLookDirection().y * yourForce, cam->getLookDirection().z * yourForce), physx::PxForceMode::eIMPULSE, true);
 
     NetMsgControlObjects msag1;
     //set ID
     msag1.ID = this->thrBa->getID();
     msag1.messType = 1;
+    msag1.force = yourForce;
     Mat4 m2 = this->thrBa->getPose();
 
     for (int i = 0; i < 16; i++)
@@ -784,7 +788,7 @@ void GLViewAssignment_FinalProject::onKeyUp( const SDL_KeyboardEvent& key )
 }
 
 
-void GLViewAssignment_FinalProject::updateObj(int type, float m[16], int ID) // , float xl, float yl, float zl)
+void GLViewAssignment_FinalProject::updateObj(int type, float m[16], int ID, int force) // , float xl, float yl, float zl)
 {
 
     if (type == 0)
@@ -834,7 +838,7 @@ void GLViewAssignment_FinalProject::updateObj(int type, float m[16], int ID) // 
         // Make sure it responds to physics
         dynamicBody->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, false);
         dynamicBody->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, false);
-        dynamicBody->addForce(physx::PxVec3(playerModel->getLookDirection().x * 30, playerModel->getLookDirection().y * 30, playerModel->getLookDirection().z * 30), physx::PxForceMode::eIMPULSE, true);
+        dynamicBody->addForce(physx::PxVec3(playerModel->getLookDirection().x * force, playerModel->getLookDirection().y * force, playerModel->getLookDirection().z * force), physx::PxForceMode::eIMPULSE, true);
 
     }
     else if (type == 2)
@@ -986,6 +990,30 @@ void GLViewAssignment_FinalProject::controllerButtons()
     {
         isReleased = true;
     }
+
+
+    if (topRightReleased && (SDL_GameControllerGetButton(control, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) != 0))
+    {
+        if(yourForce < MaxForce)
+            yourForce += 5;
+        topRightReleased = false;
+    }
+    else if (SDL_GameControllerGetButton(control, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) == 0)
+    {
+        topRightReleased = true; 
+    }
+
+    if (topLeftReleased && (SDL_GameControllerGetButton(control, SDL_CONTROLLER_BUTTON_LEFTSHOULDER) != 0))
+    {
+        if (yourForce > MinForce)
+            yourForce -= 5;
+        topLeftReleased = false;
+    }
+    else if (SDL_GameControllerGetButton(control, SDL_CONTROLLER_BUTTON_LEFTSHOULDER) == 0)
+    {
+        topLeftReleased = true;
+    }
+
 
 }
 
@@ -1233,7 +1261,9 @@ void Aftr::GLViewAssignment_FinalProject::loadMap()
               ImGui::Begin("Dodgeball Game");
              
               ImGui::Text("# hits your opponent has left: %d", numHitsYourOpponentHasLeft);
-              ImGui::Text("# hits you have left : % d", numHitsYouHaveLeft);
+              ImGui::Text("# hits you have left : %d", numHitsYouHaveLeft);
+
+              ImGui::Text("Your current throw force: %d", yourForce);
 
               if (ImGui::Button("Reset"))
               {
